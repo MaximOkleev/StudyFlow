@@ -5,3 +5,7 @@ build/
 *.iml
 .DS_Store
 out/
+*.sqlite
+*.sqlite-shm
+*.sqlite-wal
+*.bak

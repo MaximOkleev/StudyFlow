@@ -77,7 +77,7 @@ fun CalendarScreen(repository: StudyRepository) {
             }
         }
     }
-    editing?.let { task -> TaskDialog(repository.subjects, task, onDismiss = { editing = null }, onSave = { sid, title, desc, status, priority, deadlineAt, est -> repository.updateTaskWithDeadline(task, sid, title, desc, status, priority, deadlineAt, est) }) }
+    editing?.let { task -> TaskDialog(repository.subjects, task, onDismiss = { editing = null }, onSave = { sid, title, desc, status, priority, deadlineAt, est, recurrence -> repository.updateTaskWithDeadline(task, sid, title, desc, status, priority, deadlineAt, est, recurrence) }) }
     pendingDelete?.let { task -> ConfirmDialog(title = "Delete task?", text = "This will delete '${task.title}'.", onConfirm = { repository.deleteTask(task.id) }, onDismiss = { pendingDelete = null }) }
 }
 

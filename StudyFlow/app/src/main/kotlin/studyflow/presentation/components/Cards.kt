@@ -109,6 +109,10 @@ fun TaskCard(task: StudyTask, subjectName: String, onCycleStatus: () -> Unit, on
                 Badge(task.status.title, statusColor(task.status))
                 Spacer(Modifier.width(8.dp))
                 Badge(task.priority.title, priorityColor)
+                if (task.recurrence.name != "None") {
+                    Spacer(Modifier.width(8.dp))
+                    Badge(task.recurrence.title, Color(0xFF8B5CF6))
+                }
             }
             if (task.description.isNotBlank()) Text(task.description, color = Color(0xFFB9C0D4), maxLines = 2, overflow = TextOverflow.Ellipsis)
             Row(verticalAlignment = Alignment.CenterVertically) {

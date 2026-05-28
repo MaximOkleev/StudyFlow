@@ -1,6 +1,7 @@
 package studyflow.data
 
 import studyflow.domain.model.FocusSession
+import studyflow.domain.model.Habit
 import studyflow.domain.model.Note
 import studyflow.domain.model.Subject
 import studyflow.domain.model.StudyTask
@@ -38,4 +39,11 @@ object SeedData {
         FocusSession(3, 2, 2, DateUtils.daysFromNow(-1), 35),
         FocusSession(4, 5, 3, DateUtils.nowMillis(), 45)
     )
+
+    fun habits() = listOf(
+        Habit(1, "Solve one variant", "Do at least one exam-style task set every day.", "#7C3AED", DateUtils.nowMillis(), completedDates = setOf(DateUtils.today().minusDays(2).toString(), DateUtils.today().minusDays(1).toString())),
+        Habit(2, "Read notes", "Repeat formulas or summaries for 10 minutes.", "#0EA5E9", DateUtils.nowMillis(), completedDates = setOf(DateUtils.today().minusDays(1).toString())),
+        Habit(3, "Focus block", "Complete one timer session without distractions.", "#10B981", DateUtils.nowMillis())
+    )
+
 }

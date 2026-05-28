@@ -30,6 +30,6 @@ class LocalStoreTest {
         assertEquals(TaskPriority.High, snapshot.tasks.single().priority)
         assertEquals("Formula", snapshot.notes.single().title)
         assertEquals(25, snapshot.sessions.single().durationMinutes)
-        assertTrue(Files.exists(dir.resolve("studyflow.properties")))
+        assertTrue(Files.exists(dir.resolve("studyflow.sqlite")))
     }
 }

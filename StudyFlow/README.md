@@ -1,28 +1,32 @@
 # StudyFlow
 
-StudyFlow is a Kotlin Compose Desktop study planner. It combines subjects, tasks, notes, a focus timer, calendar view and progress statistics in one local-first desktop app.
+StudyFlow is a local-first desktop study planner built with Kotlin and Compose Desktop.
 
-## Features
+## What is included
 
-- Dashboard with active tasks, overdue tasks and focus totals.
-- Subjects with color, icon, description and progress.
-- Tasks with status, priority, deadline date, estimate, spent time and filters.
-- Calendar with editable deadline cards.
-- Notes with tags and subject links.
-- Focus timer with real-time countdown, manual logging, beep notification and session logging.
-- Statistics for completed tasks and focus minutes.
-- Responsive sidebar: compact mode on smaller window widths.
-- Window size persistence between launches.
-- Atomic local persistence with backup file fallback.
-- Timestamped CSV/Markdown/readable exports.
-- Restorable raw backup with validation before restore.
-- Delete/reset confirmations to avoid accidental data loss.
-- JVM unit tests for storage and date helpers.
+- Dashboard, subjects, tasks, calendar, notes, focus timer, statistics and settings.
+- SQLite persistence at `~/.studyflow/studyflow.sqlite`.
+- Automatic migration from the older `studyflow.properties` file if it exists.
+- Native desktop notification on timer completion, with a beep fallback.
+- Kanban board with draggable task cards.
+- Recurring tasks: no repeat, daily, weekly, monthly.
+- Daily habit tracking with streaks.
+- CSV export/import for tasks.
+- Markdown export/import for notes.
+- CSV export for habits.
+- SQLite raw backup/restore.
+- Window size persistence.
 
 ## Run
 
 ```bash
 ./gradlew :app:run
+```
+
+On Windows:
+
+```powershell
+gradlew.bat :app:run
 ```
 
 ## Test
@@ -37,52 +41,60 @@ StudyFlow is a Kotlin Compose Desktop study planner. It combines subjects, tasks
 ./gradlew packageDistributionForCurrentOS
 ```
 
-Compose Desktop writes native packages under:
-
-```text
-app/build/compose/binaries
-```
-
-## Project structure
-
-```text
-app/src/main/kotlin/studyflow
-├─ data          LocalStore, repository, seed data, window preferences
-├─ domain/model  Subject, StudyTask, Note, FocusSession
-├─ presentation  Compose UI screens, cards and dialogs
-└─ util          Date and color helpers
-
-app/src/test/kotlin/studyflow
-├─ data          LocalStore tests
-└─ util          Date utility tests
-```
+The generated desktop package is placed under `app/build/compose/binaries`.
 
 ## Storage
 
-Data is saved locally in:
+StudyFlow stores data in the user's home directory:
 
 ```text
-~/.studyflow/studyflow.properties
+~/.studyflow/studyflow.sqlite
 ```
 
-Window size is saved in:
+Raw backups are saved as:
 
 ```text
-~/.studyflow/window.properties
+~/.studyflow/studyflow_raw_backup.sqlite
 ```
 
-A safety copy of the main data file is kept as:
+Readable exports use timestamped filenames so old exports are not overwritten.
+
+## CSV task import format
+
+The importer expects a header and columns close to the app export format:
+
+```csv
+id,subject,title,status,priority,deadline,estimated_minutes,spent_minutes,recurrence
+1,Mathematics,Repeat logarithms,Todo,High,2026-05-30,60,0,Daily
+```
+
+The importer mainly uses `subject`, `title`, `description/status` slot, `priority`, `deadline`, `estimated_minutes`, and `recurrence`. Unknown values fall back safely.
+
+## Markdown note import format
+
+Notes can be imported from Markdown headings:
+
+```md
+# Imported notes
+
+## First note
+Text of the first note.
+
+## Second note
+Text of the second note.
+```
+
+If the file has no `##` headings, the whole file is imported as one note.
+
+## Clean repository rules
+
+Do not commit generated directories:
 
 ```text
-~/.studyflow/studyflow.properties.bak
+.gradle/
+build/
+app/build/
+.idea/
+out/
+*.iml
 ```
-
-Exports and backups are written to the same folder using timestamped filenames.
-
-## Suggested next upgrades
-
-- Replace Properties storage with SQLite/SQLDelight.
-- Add native desktop notifications instead of only beep on timer completion.
-- Add drag-and-drop kanban task board.
-- Add recurring tasks and daily habit tracking.
-- Add import from CSV/Markdown.

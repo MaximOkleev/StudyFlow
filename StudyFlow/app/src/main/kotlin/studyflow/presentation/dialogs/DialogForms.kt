@@ -26,6 +26,8 @@ import androidx.compose.ui.unit.dp
 import studyflow.domain.model.Note
 import studyflow.domain.model.Subject
 import studyflow.domain.model.StudyTask
+import studyflow.domain.model.Habit
+import studyflow.domain.model.Recurrence
 import studyflow.domain.model.TaskPriority
 import studyflow.domain.model.TaskStatus
 import studyflow.util.DateUtils
@@ -55,12 +57,13 @@ fun SubjectDialog(initial: Subject?, onDismiss: () -> Unit, onSave: (String, Str
 }
 
 @Composable
-fun TaskDialog(subjects: List<Subject>, initial: StudyTask?, onDismiss: () -> Unit, onSave: (Long, String, String, TaskStatus, TaskPriority, Long?, Int?) -> Unit) {
+fun TaskDialog(subjects: List<Subject>, initial: StudyTask?, onDismiss: () -> Unit, onSave: (Long, String, String, TaskStatus, TaskPriority, Long?, Int?, Recurrence) -> Unit) {
     var selectedSubjectId by remember { mutableStateOf(initial?.subjectId ?: subjects.firstOrNull()?.id ?: 0L) }
     var title by remember { mutableStateOf(initial?.title ?: "") }
     var description by remember { mutableStateOf(initial?.description ?: "") }
     var status by remember { mutableStateOf(initial?.status ?: TaskStatus.Todo) }
     var priority by remember { mutableStateOf(initial?.priority ?: TaskPriority.Medium) }
+    var recurrence by remember { mutableStateOf(initial?.recurrence ?: Recurrence.None) }
     var deadlineText by remember { mutableStateOf(initial?.deadlineAt?.let { DateUtils.formatIso(it) } ?: DateUtils.today().plusDays(3).toString()) }
     var estimate by remember { mutableStateOf(initial?.estimatedMinutes?.toString() ?: "60") }
     var subjectQuery by remember { mutableStateOf("") }
@@ -94,6 +97,8 @@ fun TaskDialog(subjects: List<Subject>, initial: StudyTask?, onDismiss: () -> Un
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) { TaskStatus.entries.forEach { FilterChip(selected = status == it, onClick = { status = it }, label = { Text(it.title) }) } }
                 Text("Priority")
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) { TaskPriority.entries.forEach { FilterChip(selected = priority == it, onClick = { priority = it }, label = { Text(it.title) }) } }
+                Text("Repeat")
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) { Recurrence.entries.forEach { FilterChip(selected = recurrence == it, onClick = { recurrence = it }, label = { Text(it.title) }) } }
                 OutlinedTextField(
                     deadlineText,
                     { deadlineText = it },
@@ -105,7 +110,7 @@ fun TaskDialog(subjects: List<Subject>, initial: StudyTask?, onDismiss: () -> Un
                 OutlinedTextField(estimate, { estimate = it.filter(Char::isDigit) }, label = { Text("Estimated minutes") }, modifier = Modifier.fillMaxWidth())
             }
         },
-        confirmButton = { Button(enabled = !deadlineInvalid && selectedSubjectId != 0L, onClick = { onSave(selectedSubjectId, title, description, status, priority, deadlineAt, estimate.toIntOrNull()); onDismiss() }) { Text("Save") } },
+        confirmButton = { Button(enabled = !deadlineInvalid && selectedSubjectId != 0L, onClick = { onSave(selectedSubjectId, title, description, status, priority, deadlineAt, estimate.toIntOrNull(), recurrence); onDismiss() }) { Text("Save") } },
         dismissButton = { OutlinedButton(onClick = onDismiss) { Text("Cancel") } }
     )
 }
@@ -145,6 +150,27 @@ fun NoteDialog(subjects: List<Subject>, initial: Note?, onDismiss: () -> Unit, o
             }
         },
         confirmButton = { Button(onClick = { onSave(selectedSubjectId, title, content, tags); onDismiss() }) { Text("Save") } },
+        dismissButton = { OutlinedButton(onClick = onDismiss) { Text("Cancel") } }
+    )
+}
+
+
+@Composable
+fun HabitDialog(initial: Habit?, onDismiss: () -> Unit, onSave: (String, String, String) -> Unit) {
+    var name by remember { mutableStateOf(initial?.name ?: "") }
+    var description by remember { mutableStateOf(initial?.description ?: "") }
+    var color by remember { mutableStateOf(initial?.colorHex ?: "#10B981") }
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(if (initial == null) "New habit" else "Edit habit") },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                OutlinedTextField(name, { name = it }, label = { Text("Name") }, modifier = Modifier.fillMaxWidth())
+                OutlinedTextField(description, { description = it }, label = { Text("Description") }, modifier = Modifier.fillMaxWidth())
+                OutlinedTextField(color, { color = it }, label = { Text("Color #RRGGBB") }, modifier = Modifier.fillMaxWidth())
+            }
+        },
+        confirmButton = { Button(onClick = { onSave(name, description, color); onDismiss() }) { Text("Save") } },
         dismissButton = { OutlinedButton(onClick = onDismiss) { Text("Cancel") } }
     )
 }

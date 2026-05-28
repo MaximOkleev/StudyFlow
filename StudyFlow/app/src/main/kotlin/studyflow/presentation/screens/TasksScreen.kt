@@ -83,8 +83,8 @@ fun TasksScreen(repository: StudyRepository) {
             }
         }
     }
-    if (showAdd) TaskDialog(repository.subjects, null, onDismiss = { showAdd = false }, onSave = { sid, title, desc, _, priority, deadlineAt, est -> repository.addTaskWithDeadline(sid, title, desc, priority, deadlineAt, est) })
-    editing?.let { task -> TaskDialog(repository.subjects, task, onDismiss = { editing = null }, onSave = { sid, title, desc, status, priority, deadlineAt, est -> repository.updateTaskWithDeadline(task, sid, title, desc, status, priority, deadlineAt, est) }) }
+    if (showAdd) TaskDialog(repository.subjects, null, onDismiss = { showAdd = false }, onSave = { sid, title, desc, _, priority, deadlineAt, est, recurrence -> repository.addTaskWithDeadline(sid, title, desc, priority, deadlineAt, est, recurrence) })
+    editing?.let { task -> TaskDialog(repository.subjects, task, onDismiss = { editing = null }, onSave = { sid, title, desc, status, priority, deadlineAt, est, recurrence -> repository.updateTaskWithDeadline(task, sid, title, desc, status, priority, deadlineAt, est, recurrence) }) }
     pendingDelete?.let { task ->
         ConfirmDialog(
             title = "Delete task?",

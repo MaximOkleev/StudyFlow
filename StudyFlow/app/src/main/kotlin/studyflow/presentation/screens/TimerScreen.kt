@@ -37,7 +37,7 @@ import kotlinx.coroutines.delay
 import studyflow.data.StudyRepository
 import studyflow.presentation.components.ScreenScaffold
 import studyflow.domain.model.TaskStatus
-import java.awt.Toolkit
+import studyflow.system.DesktopNotifier
 
 @Composable
 fun TimerScreen(repository: StudyRepository) {
@@ -77,7 +77,7 @@ fun TimerScreen(repository: StudyRepository) {
                 repository.logFocusSession(selectedTaskId, selectedSubjectId, presetMinutes)
                 remainingSeconds = presetMinutes * 60
                 finishMessage = "Session complete: ${presetMinutes}m logged"
-                runCatching { Toolkit.getDefaultToolkit().beep() }
+                DesktopNotifier.notify("StudyFlow timer complete", "${presetMinutes} minutes logged")
                 break
             }
             delay(250)

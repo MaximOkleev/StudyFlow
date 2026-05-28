@@ -9,7 +9,7 @@ plugins {
 }
 
 group = "dev.studyflow"
-version = "1.0.0"
+version = "1.1.0"
 
 kotlin {
     jvmToolchain(17)
@@ -20,6 +20,8 @@ dependencies {
     implementation(compose.material3)
     implementation(compose.materialIconsExtended)
     implementation(compose.components.resources)
+    implementation("org.xerial:sqlite-jdbc:3.45.3.0")
+    implementation("org.slf4j:slf4j-simple:2.0.13")
     testImplementation(kotlin("test"))
     testImplementation("org.junit.jupiter:junit-jupiter:5.10.2")
 }
@@ -35,7 +37,7 @@ compose.desktop {
         nativeDistributions {
             targetFormats(TargetFormat.Dmg, TargetFormat.Msi, TargetFormat.Deb)
             packageName = "StudyFlow"
-            packageVersion = "1.0.0"
+            packageVersion = "1.1.0"
             description = "Desktop study planner with tasks, notes, focus timer and statistics."
             copyright = "2026 StudyFlow"
         }

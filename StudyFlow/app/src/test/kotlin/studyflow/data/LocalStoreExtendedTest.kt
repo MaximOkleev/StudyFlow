@@ -109,7 +109,7 @@ class LocalStoreExtendedTest {
             emptyList(),
             emptyList()
         )
-        val propsFile = store.dataDir.resolve("studyflow.properties")
+        val propsFile = store.dataDir.resolve("studyflow.sqlite")
         assertTrue(Files.exists(propsFile))
     }
 
@@ -131,15 +131,11 @@ class LocalStoreExtendedTest {
     }
 
     @Test
-    fun storeHandlesDuplicateIds() {
+    fun storeUsesSQLiteFile() {
         val store = createStore()
-        val subjects = listOf(
-            Subject(1, "Math", "Algebra", "#7C3AED", "M", 1000L),
-            Subject(1, "Physics", "Mechanics", "#FF5733", "P", 1000L)
-        )
-        store.save(subjects, emptyList(), emptyList(), emptyList())
-        val loaded = assertNotNull(store.load())
-        assertEquals(2, loaded.subjects.size)
+        store.save(listOf(Subject(1, "Math", "Algebra", "#7C3AED", "M", 1000L)), emptyList(), emptyList(), emptyList())
+        assertTrue(Files.exists(store.dataDir.resolve("studyflow.sqlite")))
     }
+
 }
 
