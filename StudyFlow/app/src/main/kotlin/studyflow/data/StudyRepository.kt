@@ -74,6 +74,10 @@ class StudyRepository(private val store: LocalStore = LocalStore()) {
     }
 
     fun addTask(subjectId: Long, title: String, description: String, priority: TaskPriority, deadlineDaysFromNow: Int?, estimatedMinutes: Int?) {
+        addTaskWithDeadline(subjectId, title, description, priority, deadlineDaysFromNow?.let { DateUtils.daysFromNow(it.toLong()) }, estimatedMinutes)
+    }
+
+    fun addTaskWithDeadline(subjectId: Long, title: String, description: String, priority: TaskPriority, deadlineAt: Long?, estimatedMinutes: Int?) {
         if (title.isBlank() || subjects.none { it.id == subjectId }) return
         tasks = tasks + StudyTask(
             id = nextTaskId++,
@@ -82,7 +86,7 @@ class StudyRepository(private val store: LocalStore = LocalStore()) {
             description = description.trim(),
             status = TaskStatus.Todo,
             priority = priority,
-            deadlineAt = deadlineDaysFromNow?.let { DateUtils.daysFromNow(it.toLong()) },
+            deadlineAt = deadlineAt,
             estimatedMinutes = estimatedMinutes,
             spentMinutes = 0,
             createdAt = DateUtils.nowMillis(),
@@ -92,6 +96,11 @@ class StudyRepository(private val store: LocalStore = LocalStore()) {
     }
 
     fun updateTask(task: StudyTask, subjectId: Long, title: String, description: String, status: TaskStatus, priority: TaskPriority, deadlineDaysFromNow: Int?, estimatedMinutes: Int?) {
+        updateTaskWithDeadline(task, subjectId, title, description, status, priority, deadlineDaysFromNow?.let { DateUtils.daysFromNow(it.toLong()) }, estimatedMinutes)
+    }
+
+    fun updateTaskWithDeadline(task: StudyTask, subjectId: Long, title: String, description: String, status: TaskStatus, priority: TaskPriority, deadlineAt: Long?, estimatedMinutes: Int?) {
+        if (subjects.none { it.id == subjectId }) return
         val completed = if (status == TaskStatus.Done && task.completedAt == null) DateUtils.nowMillis() else if (status != TaskStatus.Done) null else task.completedAt
         tasks = tasks.map {
             if (it.id == task.id) it.copy(
@@ -100,7 +109,7 @@ class StudyRepository(private val store: LocalStore = LocalStore()) {
                 description = description.trim(),
                 status = status,
                 priority = priority,
-                deadlineAt = deadlineDaysFromNow?.let { days -> DateUtils.daysFromNow(days.toLong()) },
+                deadlineAt = deadlineAt,
                 estimatedMinutes = estimatedMinutes,
                 completedAt = completed
             ) else it
@@ -233,6 +242,33 @@ class StudyRepository(private val store: LocalStore = LocalStore()) {
         Files.writeString(path, text)
         lastMessage = "Backup exported: $path"
         return path
+    }
+
+    fun exportRawBackup(): Path {
+        store.save(subjects, tasks, notes, focusSessions)
+        val path = store.exportRawBackup()
+        lastMessage = "Restorable backup exported: $path"
+        return path
+    }
+
+    fun restoreRawBackup(): Boolean {
+        val restored = store.importRawBackup()
+        if (!restored) {
+            lastMessage = "No restorable backup found. Export one first."
+            return false
+        }
+        val snapshot = store.load()
+        if (snapshot == null) {
+            lastMessage = "Backup restore failed: data file is unreadable."
+            return false
+        }
+        subjects = snapshot.subjects
+        tasks = snapshot.tasks
+        notes = snapshot.notes
+        focusSessions = snapshot.sessions
+        recalcIds()
+        lastMessage = "Restored from raw backup. Data folder: ${store.dataDir}"
+        return true
     }
 
     private fun parseTags(text: String): List<String> = text.split(',', '#', ';').map { it.trim() }.filter { it.isNotEmpty() }.distinct()

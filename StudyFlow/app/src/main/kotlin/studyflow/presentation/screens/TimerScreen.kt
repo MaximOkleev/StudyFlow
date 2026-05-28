@@ -10,6 +10,8 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -33,29 +35,65 @@ import androidx.compose.ui.unit.sp
 import kotlinx.coroutines.delay
 import studyflow.data.StudyRepository
 import studyflow.presentation.components.ScreenScaffold
+import studyflow.domain.model.TaskStatus
+import java.awt.Toolkit
 
 @Composable
 fun TimerScreen(repository: StudyRepository) {
     var presetMinutes by remember { mutableIntStateOf(25) }
     var remainingSeconds by remember { mutableIntStateOf(presetMinutes * 60) }
     var running by remember { mutableStateOf(false) }
+    var endAtMillis by remember { mutableStateOf<Long?>(null) }
     var selectedSubjectId by remember { mutableStateOf(repository.subjects.firstOrNull()?.id) }
     var selectedTaskId by remember { mutableStateOf(repository.tasks.firstOrNull()?.id) }
+    var finishMessage by remember { mutableStateOf<String?>(null) }
 
-    LaunchedEffect(running, remainingSeconds) {
-        if (running && remainingSeconds > 0) {
-            delay(1000)
-            remainingSeconds--
-        } else if (running && remainingSeconds <= 0) {
+    fun resetTimer() {
+        running = false
+        endAtMillis = null
+        remainingSeconds = presetMinutes * 60
+    }
+
+    fun startOrPause() {
+        if (running) {
             running = false
-            repository.logFocusSession(selectedTaskId, selectedSubjectId, presetMinutes)
-            remainingSeconds = presetMinutes * 60
+            endAtMillis = null
+        } else {
+            endAtMillis = System.currentTimeMillis() + remainingSeconds * 1000L
+            running = true
+            finishMessage = null
+        }
+    }
+
+    LaunchedEffect(running, endAtMillis) {
+        while (running) {
+            val end = endAtMillis ?: break
+            val left = ((end - System.currentTimeMillis() + 999L) / 1000L).coerceAtLeast(0L).toInt()
+            remainingSeconds = left
+            if (left <= 0) {
+                running = false
+                endAtMillis = null
+                repository.logFocusSession(selectedTaskId, selectedSubjectId, presetMinutes)
+                remainingSeconds = presetMinutes * 60
+                finishMessage = "Session complete: ${presetMinutes}m logged"
+                runCatching { Toolkit.getDefaultToolkit().beep() }
+                break
+            }
+            delay(250)
         }
     }
 
     ScreenScaffold(title = "Focus Timer", subtitle = "Log study sessions and connect them to subjects or tasks.") {
-        Column(Modifier.fillMaxSize(), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(18.dp)) {
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) { listOf(15, 25, 50, 90).forEach { minutes -> FilterChip(selected = presetMinutes == minutes, onClick = { presetMinutes = minutes; remainingSeconds = minutes * 60; running = false }, label = { Text("${minutes}m") }) } }
+        Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(18.dp)) {
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                listOf(15, 25, 50, 90).forEach { minutes ->
+                    FilterChip(
+                        selected = presetMinutes == minutes,
+                        onClick = { presetMinutes = minutes; remainingSeconds = minutes * 60; running = false; endAtMillis = null },
+                        label = { Text("${minutes}m") }
+                    )
+                }
+            }
             Card(colors = CardDefaults.cardColors(containerColor = Color(0xFF101827)), modifier = Modifier.fillMaxWidth(0.7f)) {
                 Column(Modifier.padding(32.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(18.dp)) {
                     val mm = remainingSeconds / 60
@@ -63,16 +101,33 @@ fun TimerScreen(repository: StudyRepository) {
                     Text("%02d:%02d".format(mm, ss), color = Color.White, fontSize = 72.sp, fontWeight = FontWeight.Bold)
                     LinearProgressIndicator(progress = { 1f - remainingSeconds.toFloat() / (presetMinutes * 60).coerceAtLeast(1) }, modifier = Modifier.fillMaxWidth().height(10.dp))
                     Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                        Button(onClick = { running = !running }) { Text(if (running) "Pause" else "Start") }
-                        OutlinedButton(onClick = { running = false; remainingSeconds = presetMinutes * 60 }) { Text("Reset") }
-                        OutlinedButton(onClick = { repository.logFocusSession(selectedTaskId, selectedSubjectId, ((presetMinutes * 60 - remainingSeconds) / 60).coerceAtLeast(1)); running = false; remainingSeconds = presetMinutes * 60 }) { Text("Log now") }
+                        Button(onClick = { startOrPause() }) { Text(if (running) "Pause" else "Start") }
+                        OutlinedButton(onClick = { resetTimer() }) { Text("Reset") }
+                        OutlinedButton(onClick = {
+                            val logged = ((presetMinutes * 60 - remainingSeconds) / 60).coerceAtLeast(1)
+                            repository.logFocusSession(selectedTaskId, selectedSubjectId, logged)
+                            resetTimer()
+                            finishMessage = "Logged manually: ${logged}m"
+                        }) { Text("Log now") }
                     }
+                    finishMessage?.let { Text(it, color = Color(0xFF10B981)) }
                 }
             }
             Text("Subject", color = Color.White)
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) { repository.subjects.take(6).forEach { s -> FilterChip(selected = selectedSubjectId == s.id, onClick = { selectedSubjectId = s.id }, label = { Text(s.name) }) } }
+            repository.subjects.chunked(4).forEach { rowSubjects ->
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
+                    rowSubjects.forEach { s -> FilterChip(selected = selectedSubjectId == s.id, onClick = { selectedSubjectId = s.id }, label = { Text(s.name.take(16)) }, modifier = Modifier.weight(1f)) }
+                    repeat(4 - rowSubjects.size) { Spacer(Modifier.weight(1f)) }
+                }
+            }
             Text("Task", color = Color.White)
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) { repository.tasks.take(5).forEach { t -> FilterChip(selected = selectedTaskId == t.id, onClick = { selectedTaskId = t.id; selectedSubjectId = t.subjectId }, label = { Text(t.title.take(18)) }) } }
+            val activeTasks = repository.tasks.filter { it.status != TaskStatus.Done }
+            activeTasks.chunked(3).forEach { rowTasks ->
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
+                    rowTasks.forEach { t -> FilterChip(selected = selectedTaskId == t.id, onClick = { selectedTaskId = t.id; selectedSubjectId = t.subjectId }, label = { Text(t.title.take(18)) }, modifier = Modifier.weight(1f)) }
+                    repeat(3 - rowTasks.size) { Spacer(Modifier.weight(1f)) }
+                }
+            }
             Spacer(Modifier.height(10.dp))
             Text("Logged total: ${repository.totalFocusMinutes()} minutes", color = Color(0xFF9CA3AF))
         }

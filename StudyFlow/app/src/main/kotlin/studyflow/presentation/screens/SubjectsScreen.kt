@@ -19,12 +19,14 @@ import studyflow.data.StudyRepository
 import studyflow.domain.model.Subject
 import studyflow.presentation.components.ScreenScaffold
 import studyflow.presentation.components.SubjectCard
+import studyflow.presentation.dialogs.ConfirmDialog
 import studyflow.presentation.dialogs.SubjectDialog
 
 @Composable
 fun SubjectsScreen(repository: StudyRepository) {
     var showAdd by remember { mutableStateOf(false) }
     var editing by remember { mutableStateOf<Subject?>(null) }
+    var pendingDelete by remember { mutableStateOf<Subject?>(null) }
     ScreenScaffold(
         title = "Subjects",
         subtitle = "Separate progress by learning area.",
@@ -43,11 +45,19 @@ fun SubjectsScreen(repository: StudyRepository) {
                     progress = repository.subjectProgress(subject.id),
                     taskCount = repository.tasksForSubject(subject.id).size,
                     onEdit = { editing = subject },
-                    onDelete = { repository.deleteSubject(subject.id) }
+                    onDelete = { pendingDelete = subject }
                 )
             }
         }
     }
     if (showAdd) SubjectDialog(null, onDismiss = { showAdd = false }, onSave = repository::addSubject)
     editing?.let { subject -> SubjectDialog(subject, onDismiss = { editing = null }, onSave = { n, d, c, i -> repository.updateSubject(subject, n, d, c, i) }) }
+    pendingDelete?.let { subject ->
+        ConfirmDialog(
+            title = "Delete subject?",
+            text = "This will delete '${subject.name}' and all its tasks. Notes and focus sessions will be detached.",
+            onConfirm = { repository.deleteSubject(subject.id) },
+            onDismiss = { pendingDelete = null }
+        )
+    }
 }

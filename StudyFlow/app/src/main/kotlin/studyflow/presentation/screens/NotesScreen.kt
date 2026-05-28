@@ -20,6 +20,7 @@ import studyflow.domain.model.Note
 import studyflow.presentation.components.EmptyState
 import studyflow.presentation.components.NoteCard
 import studyflow.presentation.components.ScreenScaffold
+import studyflow.presentation.dialogs.ConfirmDialog
 import studyflow.presentation.dialogs.NoteDialog
 
 @Composable
@@ -27,6 +28,7 @@ fun NotesScreen(repository: StudyRepository) {
     var search by remember { mutableStateOf("") }
     var showAdd by remember { mutableStateOf(false) }
     var editing by remember { mutableStateOf<Note?>(null) }
+    var pendingDelete by remember { mutableStateOf<Note?>(null) }
     val notes = repository.notes.filter { note ->
         search.isBlank() || note.title.contains(search, true) || note.content.contains(search, true) || note.tags.any { it.contains(search, true) }
     }.sortedByDescending { it.updatedAt }
@@ -38,9 +40,17 @@ fun NotesScreen(repository: StudyRepository) {
     ) {
         OutlinedTextField(search, { search = it }, label = { Text("Search notes or tags") }, singleLine = true, modifier = Modifier.fillMaxWidth())
         if (notes.isEmpty()) EmptyState("No notes found.", "Create note") { showAdd = true } else LazyColumn(verticalArrangement = Arrangement.spacedBy(12.dp), modifier = Modifier.fillMaxSize()) {
-            items(notes) { note -> NoteCard(note, repository.subjectName(note.subjectId), onEdit = { editing = note }, onDelete = { repository.deleteNote(note.id) }) }
+            items(notes) { note -> NoteCard(note, repository.subjectName(note.subjectId), onEdit = { editing = note }, onDelete = { pendingDelete = note }) }
         }
     }
     if (showAdd) NoteDialog(repository.subjects, null, onDismiss = { showAdd = false }, onSave = repository::addNote)
     editing?.let { note -> NoteDialog(repository.subjects, note, onDismiss = { editing = null }, onSave = { sid, title, content, tags -> repository.updateNote(note, sid, title, content, tags) }) }
+    pendingDelete?.let { note ->
+        ConfirmDialog(
+            title = "Delete note?",
+            text = "This will permanently delete '${note.title}'.",
+            onConfirm = { repository.deleteNote(note.id) },
+            onDismiss = { pendingDelete = null }
+        )
+    }
 }

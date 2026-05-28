@@ -7,7 +7,6 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
-import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
@@ -28,6 +27,7 @@ import studyflow.domain.model.Subject
 import studyflow.domain.model.StudyTask
 import studyflow.domain.model.TaskPriority
 import studyflow.domain.model.TaskStatus
+import studyflow.util.DateUtils
 
 @Composable
 fun SubjectDialog(initial: Subject?, onDismiss: () -> Unit, onSave: (String, String, String, String) -> Unit) {
@@ -54,22 +54,35 @@ fun SubjectDialog(initial: Subject?, onDismiss: () -> Unit, onSave: (String, Str
 }
 
 @Composable
-fun TaskDialog(subjects: List<Subject>, initial: StudyTask?, onDismiss: () -> Unit, onSave: (Long, String, String, TaskStatus, TaskPriority, Int?, Int?) -> Unit) {
+fun TaskDialog(subjects: List<Subject>, initial: StudyTask?, onDismiss: () -> Unit, onSave: (Long, String, String, TaskStatus, TaskPriority, Long?, Int?) -> Unit) {
     var selectedSubjectId by remember { mutableStateOf(initial?.subjectId ?: subjects.firstOrNull()?.id ?: 0L) }
     var title by remember { mutableStateOf(initial?.title ?: "") }
     var description by remember { mutableStateOf(initial?.description ?: "") }
     var status by remember { mutableStateOf(initial?.status ?: TaskStatus.Todo) }
     var priority by remember { mutableStateOf(initial?.priority ?: TaskPriority.Medium) }
-    var deadlineDays by remember { mutableStateOf(if (initial == null) "3" else "") }
+    var deadlineText by remember { mutableStateOf(initial?.deadlineAt?.let { DateUtils.formatIso(it) } ?: DateUtils.today().plusDays(3).toString()) }
     var estimate by remember { mutableStateOf(initial?.estimatedMinutes?.toString() ?: "60") }
+    val deadlineAt = DateUtils.parseIsoDateToMillis(deadlineText)
+    val deadlineInvalid = deadlineText.isNotBlank() && deadlineAt == null
+
     AlertDialog(
         onDismissRequest = onDismiss,
         title = { Text(if (initial == null) "New task" else "Edit task") },
         text = {
-            Column(Modifier.heightIn(max = 560.dp).verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+            Column(Modifier.heightIn(max = 590.dp).verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(10.dp)) {
                 Text("Subject")
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
-                    subjects.take(4).forEach { s -> FilterChip(selected = selectedSubjectId == s.id, onClick = { selectedSubjectId = s.id }, label = { Text(s.name.take(10)) }) }
+                subjects.chunked(2).forEach { rowSubjects ->
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
+                        rowSubjects.forEach { s ->
+                            FilterChip(
+                                selected = selectedSubjectId == s.id,
+                                onClick = { selectedSubjectId = s.id },
+                                label = { Text(s.name.take(16)) },
+                                modifier = Modifier.weight(1f)
+                            )
+                        }
+                        if (rowSubjects.size == 1) Text("", modifier = Modifier.weight(1f))
+                    }
                 }
                 OutlinedTextField(title, { title = it }, label = { Text("Title") }, modifier = Modifier.fillMaxWidth())
                 OutlinedTextField(description, { description = it }, label = { Text("Description") }, modifier = Modifier.fillMaxWidth())
@@ -77,12 +90,18 @@ fun TaskDialog(subjects: List<Subject>, initial: StudyTask?, onDismiss: () -> Un
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) { TaskStatus.entries.forEach { FilterChip(selected = status == it, onClick = { status = it }, label = { Text(it.title) }) } }
                 Text("Priority")
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) { TaskPriority.entries.forEach { FilterChip(selected = priority == it, onClick = { priority = it }, label = { Text(it.title) }) } }
-                OutlinedTextField(deadlineDays, { deadlineDays = it.filter { ch -> ch == '-' || ch.isDigit() } }, label = { Text("Deadline days from today, empty = none") }, modifier = Modifier.fillMaxWidth())
+                OutlinedTextField(
+                    deadlineText,
+                    { deadlineText = it },
+                    label = { Text("Deadline date: YYYY-MM-DD, empty = none") },
+                    isError = deadlineInvalid,
+                    modifier = Modifier.fillMaxWidth()
+                )
+                if (deadlineInvalid) Text("Date format must be like ${DateUtils.today()}")
                 OutlinedTextField(estimate, { estimate = it.filter(Char::isDigit) }, label = { Text("Estimated minutes") }, modifier = Modifier.fillMaxWidth())
-                if (initial != null) Text("For existing tasks an empty deadline field removes the deadline.", modifier = Modifier.padding(top = 4.dp))
             }
         },
-        confirmButton = { Button(onClick = { onSave(selectedSubjectId, title, description, status, priority, deadlineDays.toIntOrNull(), estimate.toIntOrNull()); onDismiss() }) { Text("Save") } },
+        confirmButton = { Button(enabled = !deadlineInvalid && selectedSubjectId != 0L, onClick = { onSave(selectedSubjectId, title, description, status, priority, deadlineAt, estimate.toIntOrNull()); onDismiss() }) { Text("Save") } },
         dismissButton = { OutlinedButton(onClick = onDismiss) { Text("Cancel") } }
     )
 }
@@ -99,9 +118,19 @@ fun NoteDialog(subjects: List<Subject>, initial: Note?, onDismiss: () -> Unit, o
         text = {
             Column(Modifier.heightIn(max = 560.dp).verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(10.dp)) {
                 Text("Subject")
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
-                    FilterChip(selected = selectedSubjectId == null, onClick = { selectedSubjectId = null }, label = { Text("None") })
-                    subjects.take(4).forEach { s -> FilterChip(selected = selectedSubjectId == s.id, onClick = { selectedSubjectId = s.id }, label = { Text(s.name.take(10)) }) }
+                FilterChip(selected = selectedSubjectId == null, onClick = { selectedSubjectId = null }, label = { Text("None") })
+                subjects.chunked(2).forEach { rowSubjects ->
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
+                        rowSubjects.forEach { s ->
+                            FilterChip(
+                                selected = selectedSubjectId == s.id,
+                                onClick = { selectedSubjectId = s.id },
+                                label = { Text(s.name.take(16)) },
+                                modifier = Modifier.weight(1f)
+                            )
+                        }
+                        if (rowSubjects.size == 1) Text("", modifier = Modifier.weight(1f))
+                    }
                 }
                 OutlinedTextField(title, { title = it }, label = { Text("Title") }, modifier = Modifier.fillMaxWidth())
                 OutlinedTextField(content, { content = it }, label = { Text("Content") }, modifier = Modifier.fillMaxWidth(), minLines = 7)
@@ -109,6 +138,17 @@ fun NoteDialog(subjects: List<Subject>, initial: Note?, onDismiss: () -> Unit, o
             }
         },
         confirmButton = { Button(onClick = { onSave(selectedSubjectId, title, content, tags); onDismiss() }) { Text("Save") } },
+        dismissButton = { OutlinedButton(onClick = onDismiss) { Text("Cancel") } }
+    )
+}
+
+@Composable
+fun ConfirmDialog(title: String, text: String, confirmText: String = "Delete", onConfirm: () -> Unit, onDismiss: () -> Unit) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(title) },
+        text = { Text(text) },
+        confirmButton = { Button(onClick = { onConfirm(); onDismiss() }) { Text(confirmText) } },
         dismissButton = { OutlinedButton(onClick = onDismiss) { Text("Cancel") } }
     )
 }

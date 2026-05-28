@@ -1,31 +1,24 @@
-# StudyFlow development plan
+# StudyFlow project plan
 
-## Done in this starter
+## Done
 
-- Working Compose Desktop application shell
-- Sidebar navigation
-- Dashboard
-- Subjects screen
-- Tasks screen
-- Notes screen
-- Calendar screen
-- Timer screen
-- Statistics screen
-- Settings and export screen
-- Local persistence
-- Add/edit/delete for subjects, tasks and notes
-- Focus sessions
-- Demo data
+- Kotlin Compose Desktop project.
+- Dashboard, subjects, tasks, calendar, notes, timer, statistics and settings screens.
+- Task CRUD with status, priority, deadline date and estimates.
+- Calendar task editing.
+- Full subject selection in dialogs.
+- Focus timer with real-time countdown and session logging.
+- Confirmation dialogs for destructive actions.
+- Local storage and export tools.
+- Restorable raw backup.
+- Clean repository layout without IDE folder at the root.
 
-## Next practical steps
+## Next useful upgrades
 
-1. Open the project and run it.
-2. Click through all screens and check what you want to redesign.
-3. Replace the simple task deadline input with a real date picker.
-4. Add SQLite/SQLDelight when the UI is stable.
-5. Create screenshots for GitHub.
-6. Record a short demo video.
-
-## Good final defense explanation
-
-StudyFlow is not only a to-do list. It connects subjects, tasks, deadlines, notes and focus sessions into one local desktop study system. The user can plan work, track time, see weekly progress and export data. The project demonstrates desktop UI, state management, local persistence and simple analytics.
+1. SQLite/SQLDelight persistence.
+2. Native desktop notifications.
+3. Recurring tasks.
+4. Kanban board view.
+5. Better calendar date picker.
+6. CSV import.
+7. Light theme.

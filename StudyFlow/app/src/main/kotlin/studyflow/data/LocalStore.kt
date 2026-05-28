@@ -9,12 +9,14 @@ import studyflow.domain.model.TaskStatus
 import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.Paths
+import java.nio.file.StandardCopyOption
 import java.util.Properties
 import kotlin.io.path.exists
 
 class LocalStore {
     val dataDir: Path = Paths.get(System.getProperty("user.home"), ".studyflow")
     private val file: Path = dataDir.resolve("studyflow.properties")
+    private val rawBackupFile: Path = dataDir.resolve("studyflow_raw_backup.properties")
 
     init {
         Files.createDirectories(dataDir)
@@ -82,6 +84,18 @@ class LocalStore {
 
     fun reset() {
         if (file.exists()) Files.delete(file)
+    }
+
+    fun exportRawBackup(): Path {
+        if (!file.exists()) throw IllegalStateException("Nothing to back up yet")
+        Files.copy(file, rawBackupFile, StandardCopyOption.REPLACE_EXISTING)
+        return rawBackupFile
+    }
+
+    fun importRawBackup(): Boolean {
+        if (!rawBackupFile.exists()) return false
+        Files.copy(rawBackupFile, file, StandardCopyOption.REPLACE_EXISTING)
+        return true
     }
 
     private fun loadSubjects(p: Properties): List<Subject> {

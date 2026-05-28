@@ -34,6 +34,13 @@ object DateUtils {
         return millisToDate(millis).format(fullFormatter)
     }
 
+    fun formatIso(millis: Long?): String = millis?.let { millisToDate(it).toString() } ?: ""
+
+    fun parseIsoDateToMillis(text: String): Long? {
+        if (text.isBlank()) return null
+        return runCatching { dateToMillis(LocalDate.parse(text.trim())) }.getOrNull()
+    }
+
     fun isOverdue(millis: Long?): Boolean = millis != null && millis < todayStartMillis()
 
     fun isToday(millis: Long?): Boolean = millis != null && millisToDate(millis) == today()

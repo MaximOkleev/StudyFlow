@@ -1,9 +1,7 @@
-/.gradle
-/build
-/app/build
-/out
-/.idea
+.gradle/
+build/
+*/build/
+.idea/
 *.iml
-*.log
 .DS_Store
-local.properties
+out/
