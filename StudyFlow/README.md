@@ -1,133 +1,254 @@
 # StudyFlow
 
+**StudyFlow** — локальное desktop-приложение для планирования учёбы на Kotlin + Compose Desktop. Приложение хранит данные локально в SQLite, умеет работать с предметами, задачами, календарём, сессией, заметками, фокус-таймером, статистикой, Kanban-доской и привычками.
 
-## Semester workspace
+## Что есть в проекте
 
-This build ships with your semester subjects preloaded, including course codes, assessment type and classroom hours. It still contains no tasks, notes, focus sessions or habits, so you can add your own work manually.
+- Dashboard с ближайшими задачами и событиями сессии.
+- Предметы семестра с кодами дисциплин и количеством часов.
+- Задачи с дедлайнами, приоритетами, статусами и повторением.
+- Calendar с задачами и событиями сессии.
+- Session — расписание сессии: дата, время, предмет, преподаватели.
+- Notes — заметки по предметам.
+- Focus Timer с системным уведомлением после завершения.
+- Statistics — базовая статистика по задачам и фокус-сессиям.
+- Board — Kanban-доска с перетаскиванием задач между To do / In progress / Done.
+- Habits — ежедневные привычки и streak.
+- SQLite-хранилище вместо `.properties`.
+- CSV/Markdown import/export.
+- Raw backup/restore SQLite-базы.
+- Сохранение размера окна.
 
-If you clear the database and later want to restore the subject list, open **Settings → Load semester subjects**. The same list is also included as `sample_data/semester_subjects.csv`.
+## Стартовые данные
 
-Current preloaded subject count: **20**. Total listed classroom hours: **993 ч**.
+В сборку добавлены предметы текущего семестра и полное расписание сессии.
 
-If an older local database already exists from a previous build, open Settings and use **Clear all data**, or delete the local folder manually:
+Предметы содержат:
+
+- название дисциплины;
+- код дисциплины;
+- тип аттестации;
+- лекции / практики / лабораторные;
+- общее количество часов.
+
+Расписание сессии содержит только полезные для планера данные:
+
+- дату;
+- время;
+- предмет;
+- преподавателей.
+
+Кабинеты и служебные слова типа `АТТ`, `ЗАЧ`, `З/О`, `ЭКЗ` в интерфейсе не показываются.
+
+Если у тебя уже была старая локальная база, зайди в **Settings** и нажми:
+
+```text
+Clear all data
+Load semester subjects
+Load session schedule
+```
+
+Или вручную удали папку:
 
 ```text
 %USERPROFILE%\.studyflow
 ```
 
-StudyFlow is a local-first desktop study planner built with Kotlin and Compose Desktop.
+После этого приложение загрузит чистую базу с предметами и расписанием сессии.
 
-## What is included
+## Запуск из исходников
 
-- Dashboard, subjects, tasks, calendar, notes, focus timer, statistics and settings.
-- SQLite persistence at `~/.studyflow/studyflow.sqlite`.
-- Automatic migration from the older `studyflow.properties` file if it exists.
-- Native desktop notification on timer completion, with a beep fallback.
-- Kanban board with draggable task cards.
-- Recurring tasks: no repeat, daily, weekly, monthly.
-- Daily habit tracking with streaks.
-- CSV export/import for subjects and tasks.
-- Markdown export/import for notes.
-- CSV export for habits.
-- SQLite raw backup/restore.
-- Window size persistence.
+Открой папку `StudyFlow`, где лежит `settings.gradle.kts`.
 
-## Run
-
-```bash
-./gradlew :app:run
-```
-
-On Windows:
+На Windows:
 
 ```powershell
 gradlew.bat :app:run
 ```
 
+На macOS/Linux:
 
-## Native-access warning
-
-Newer JDKs may print a warning about `System::load` from Skiko when running Compose Desktop. The Gradle config passes `--enable-native-access=ALL-UNNAMED` for `:app:run` and packaged builds, so the warning should be suppressed. If the warning still appears in an IDE run configuration, add this VM option manually:
-
-```text
---enable-native-access=ALL-UNNAMED
+```bash
+./gradlew :app:run
 ```
 
-## Test
+При первом запуске Gradle может скачать зависимости. Для запуска из исходников нужен интернет, если зависимости ещё не лежат в локальном Gradle-кэше.
+
+## Portable-запуск на другом Windows-ноутбуке без скачивания
+
+Если нужно запустить StudyFlow на другом ноутбуке **без установки Gradle, Kotlin, JDK и без скачивания зависимостей**, нужно заранее собрать portable-версию на своём ноутбуке.
+
+В корне проекта выполни:
+
+```powershell
+cd путь\к\StudyFlow
+.\gradlew.bat :app:createDistributable
+```
+
+После сборки готовое приложение появится примерно здесь:
+
+```text
+StudyFlow\app\build\compose\binaries\main\app\StudyFlow
+```
+
+Именно эту папку `StudyFlow` нужно скопировать целиком на флешку или в архив. Не копируй только `.exe`, потому что рядом лежат runtime-файлы и библиотеки, без которых приложение не запустится.
+
+Чтобы сделать zip-архив portable-версии, выполни:
+
+```powershell
+Compress-Archive `
+  -Path .\app\build\compose\binaries\main\app\StudyFlow `
+  -DestinationPath .\StudyFlow_portable_windows.zip `
+  -Force
+```
+
+На другом Windows-ноутбуке:
+
+```text
+1. Распакуй StudyFlow_portable_windows.zip
+2. Открой папку StudyFlow
+3. Запусти StudyFlow.exe
+```
+
+Если внутри нет `StudyFlow.exe`, проверь подпапку:
+
+```text
+StudyFlow\bin\StudyFlow.exe
+```
+
+Главное правило: переносится вся собранная папка приложения, а не один exe-файл.
+
+## Перенос данных на другой ноутбук
+
+Данные StudyFlow хранятся отдельно от приложения:
+
+```text
+%USERPROFILE%\.studyflow
+```
+
+Обычно на твоём ноутбуке это может быть:
+
+```text
+C:\Users\Honor\.studyflow
+```
+
+Если хочешь перенести свои задачи, заметки, привычки и прогресс на другой ноутбук, скопируй папку `.studyflow` на новый компьютер в папку пользователя:
+
+```text
+C:\Users\ИМЯ_ПОЛЬЗОВАТЕЛЯ\.studyflow
+```
+
+Если хочешь начать на другом ноутбуке с чистой базы, эту папку переносить не нужно. После запуска можно нажать:
+
+```text
+Settings → Load semester subjects
+Settings → Load session schedule
+```
+
+## Сборка установщика под текущую ОС
+
+Для создания desktop-пакета под текущую систему:
+
+```powershell
+gradlew.bat :app:packageDistributionForCurrentOS
+```
+
+Артефакты появятся в:
+
+```text
+app\build\compose\binaries
+```
+
+Важно: Windows-сборку лучше собирать на Windows. Для macOS/Linux нужно собирать отдельные версии на соответствующих системах.
+
+## Тесты
+
+```powershell
+gradlew.bat test
+```
+
+На macOS/Linux:
 
 ```bash
 ./gradlew test
 ```
 
-## Package
+## Хранилище
 
-```bash
-./gradlew packageDistributionForCurrentOS
-```
-
-The generated desktop package is placed under `app/build/compose/binaries`.
-
-## Storage
-
-StudyFlow stores data in the user's home directory:
+Основная база:
 
 ```text
-~/.studyflow/studyflow.sqlite
+%USERPROFILE%\.studyflow\studyflow.sqlite
 ```
 
-Raw backups are saved as:
+Raw backup:
 
 ```text
-~/.studyflow/studyflow_raw_backup.sqlite
+%USERPROFILE%\.studyflow\studyflow_raw_backup.sqlite
 ```
 
-Readable exports use timestamped filenames so old exports are not overwritten.
+Readable exports создаются с timestamp в названии, поэтому старые экспорты не перезаписываются.
 
-## CSV subject import format
+## Import / Export
 
-Subject import expects a header and columns close to:
+В приложении есть импорт и экспорт:
+
+- Subjects CSV;
+- Tasks CSV;
+- Notes Markdown;
+- Habits CSV;
+- SQLite raw backup.
+
+Готовые стартовые CSV лежат в:
+
+```text
+sample_data\semester_subjects.csv
+sample_data\exam_schedule.csv
+```
+
+## Формат CSV для предметов
 
 ```csv
 id,name,description,color_hex,icon
 1,Теория игр,"Код: Б1-ОПМ.Б.7 • Аттестация: Атт/Экз • Всего: 45 ч",#A78BFA,ТИ
 ```
 
-A ready file is included at:
-
-```text
-sample_data/semester_subjects.csv
-```
-
-## CSV task import format
-
-The importer expects a header and columns close to the app export format:
+## Формат CSV для задач
 
 ```csv
 id,subject,title,status,priority,deadline,estimated_minutes,spent_minutes,recurrence
-1,Mathematics,Repeat logarithms,Todo,High,2026-05-30,60,0,Daily
+1,Теория игр,Повторить билет 1,Todo,High,2026-06-14,60,0,No repeat
 ```
 
-The importer mainly uses `subject`, `title`, `description/status` slot, `priority`, `deadline`, `estimated_minutes`, and `recurrence`. Unknown values fall back safely.
-
-## Markdown note import format
-
-Notes can be imported from Markdown headings:
+## Формат Markdown для заметок
 
 ```md
-# Imported notes
+# Notes
 
-## First note
-Text of the first note.
+## Первая заметка
+Текст первой заметки.
 
-## Second note
-Text of the second note.
+## Вторая заметка
+Текст второй заметки.
 ```
 
-If the file has no `##` headings, the whole file is imported as one note.
+Если в файле нет заголовков `##`, весь Markdown импортируется как одна заметка.
 
-## Clean repository rules
+## Native-access warning
 
-Do not commit generated directories:
+На новых версиях JDK может появиться предупреждение про `System::load` от Skiko. Это не ошибка и не проблема проекта. Compose Desktop использует Skiko для нативной отрисовки интерфейса.
+
+В Gradle уже добавлен VM option:
+
+```text
+--enable-native-access=ALL-UNNAMED
+```
+
+Если запускаешь приложение через IDE и предупреждение всё равно появляется, добавь этот параметр в VM options конфигурации запуска.
+
+## Правила чистого репозитория
+
+Не коммитить и не класть в финальный архив:
 
 ```text
 .gradle/
@@ -138,27 +259,31 @@ out/
 *.iml
 ```
 
-### Long subject names
+## Быстрая памятка
 
-The app now uses full-width dropdown selectors for subject filters and subject pickers. Long semester discipline names are shown in full instead of being cut to 12–16 characters. This affects Tasks, task/note dialogs and the Focus Timer.
+Запуск из исходников:
 
-## Session schedule
-
-The app includes the full current session schedule from the uploaded table. It stores only what is useful inside the planner:
-
-- date and time;
-- subject;
-- teacher list.
-
-Rooms and control-type labels such as `АТТ`, `ЗАЧ`, `З/О`, `ЭКЗ` are intentionally not shown in the UI.
-
-Open **Session** in the sidebar to see the full list. Events are also shown in **Calendar** on their dates and in the dashboard quick diagnosis block.
-
-If you already have an old local SQLite database, open **Settings → Load session schedule**. This reloads the bundled session schedule and removes the older short five-exam seed.
-
-The source CSV is included at:
-
-```text
-sample_data/exam_schedule.csv
+```powershell
+gradlew.bat :app:run
 ```
 
+Создание portable-версии:
+
+```powershell
+gradlew.bat :app:createDistributable
+```
+
+Папка portable-приложения:
+
+```text
+app\build\compose\binaries\main\app\StudyFlow
+```
+
+Создание zip для другого ноутбука:
+
+```powershell
+Compress-Archive `
+  -Path .\app\build\compose\binaries\main\app\StudyFlow `
+  -DestinationPath .\StudyFlow_portable_windows.zip `
+  -Force
+```
