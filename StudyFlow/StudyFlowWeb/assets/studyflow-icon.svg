@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" role="img" aria-label="StudyFlow icon">
+  <defs>
+    <linearGradient id="bg" x1="32" y1="20" x2="224" y2="236" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#38BDF8"/>
+      <stop offset="0.52" stop-color="#6366F1"/>
+      <stop offset="1" stop-color="#A855F7"/>
+    </linearGradient>
+    <linearGradient id="paper" x1="70" y1="62" x2="186" y2="180" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#FFFFFF"/>
+      <stop offset="1" stop-color="#DBEAFE"/>
+    </linearGradient>
+    <filter id="shadow" x="-30%" y="-30%" width="160%" height="160%">
+      <feDropShadow dx="0" dy="16" stdDeviation="16" flood-color="#020617" flood-opacity="0.35"/>
+    </filter>
+  </defs>
+
+  <rect x="18" y="18" width="220" height="220" rx="58" fill="url(#bg)"/>
+  <path d="M60 74C84 58 105 58 128 75C151 58 172 58 196 74V177C173 164 151 165 128 184C105 165 83 164 60 177V74Z" fill="#EAF2FF" opacity="0.96" filter="url(#shadow)"/>
+  <path d="M128 75V184" stroke="#93C5FD" stroke-width="7" stroke-linecap="round" opacity="0.8"/>
+  <path d="M76 94C92 88 106 89 119 98" stroke="#60A5FA" stroke-width="7" stroke-linecap="round" opacity="0.85"/>
+  <path d="M76 118C93 112 106 114 119 124" stroke="#60A5FA" stroke-width="7" stroke-linecap="round" opacity="0.55"/>
+  <path d="M137 98C151 89 165 88 181 94" stroke="#8B5CF6" stroke-width="7" stroke-linecap="round" opacity="0.85"/>
+  <path d="M137 124C151 114 164 112 181 118" stroke="#8B5CF6" stroke-width="7" stroke-linecap="round" opacity="0.55"/>
+
+  <circle cx="180" cy="176" r="34" fill="#0F172A" opacity="0.92"/>
+  <path d="M164 176L174 186L197 161" fill="none" stroke="#34D399" stroke-width="10" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M72 198C97 217 159 218 188 198" fill="none" stroke="#C4B5FD" stroke-width="8" stroke-linecap="round" opacity="0.9"/>
+</svg>

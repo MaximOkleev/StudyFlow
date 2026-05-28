@@ -3,12 +3,14 @@ package studyflow.presentation.components
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -35,8 +37,23 @@ fun Sidebar(current: AppScreen, compact: Boolean = false, onSelect: (AppScreen) 
             .padding(18.dp),
         verticalArrangement = Arrangement.spacedBy(10.dp)
     ) {
-        Text(if (compact) "SF" else "StudyFlow", color = Color.White, fontSize = if (compact) 23.sp else 25.sp, fontWeight = FontWeight.Bold)
-        if (!compact) Text("personal study cockpit", color = Color(0xFF8B93A7), fontSize = 12.sp)
+        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+            Box(
+                modifier = Modifier
+                    .size(42.dp)
+                    .clip(RoundedCornerShape(14.dp))
+                    .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.92f)),
+                contentAlignment = Alignment.Center
+            ) {
+                Text("✓", color = Color.White, fontSize = 24.sp, fontWeight = FontWeight.Black)
+            }
+            if (!compact) {
+                Column(verticalArrangement = Arrangement.spacedBy(1.dp)) {
+                    Text("StudyFlow", color = Color.White, fontSize = 25.sp, fontWeight = FontWeight.Bold)
+                    Text("учебный планер", color = Color(0xFF8B93A7), fontSize = 12.sp)
+                }
+            }
+        }
         Spacer(Modifier.height(18.dp))
         AppScreen.entries.forEach { item ->
             val selected = item == current

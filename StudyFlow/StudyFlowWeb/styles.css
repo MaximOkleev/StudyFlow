@@ -52,15 +52,20 @@ button { cursor: pointer; }
   margin-bottom: 24px;
 }
 .logo {
-  width: 46px;
-  height: 46px;
+  width: 50px;
+  height: 50px;
   display: grid;
   place-items: center;
-  border-radius: 16px;
-  background: linear-gradient(135deg, var(--accent), var(--accent2));
-  color: white;
-  font-weight: 900;
-  box-shadow: 0 12px 36px rgba(96, 165, 250, .35);
+  border-radius: 18px;
+  background: rgba(255,255,255,.06);
+  box-shadow: 0 16px 44px rgba(96, 165, 250, .32);
+  overflow: hidden;
+  border: 1px solid rgba(255,255,255,.16);
+}
+.logo img {
+  width: 100%;
+  height: 100%;
+  display: block;
 }
 .brand h1 { margin: 0; font-size: 20px; }
 .brand p { margin: 2px 0 0; color: var(--muted); font-size: 13px; }
@@ -247,32 +252,71 @@ textarea { resize: vertical; min-height: 110px; }
   display: grid;
   grid-template-columns: repeat(7, minmax(0, 1fr));
   gap: 8px;
+  overflow: hidden;
 }
-.day-head { text-align: center; color: var(--muted); font-weight: 800; padding: 8px; }
+.day-head {
+  text-align: center;
+  color: var(--muted);
+  font-weight: 800;
+  padding: 8px;
+  min-width: 0;
+}
 .day {
-  min-height: 128px;
+  height: 220px;
+  min-width: 0;
   border: 1px solid var(--line);
   border-radius: 18px;
   padding: 10px;
   background: rgba(255,255,255,.045);
   overflow: hidden;
+  display: flex;
+  flex-direction: column;
 }
 .day.today { border-color: rgba(96,165,250,.9); background: rgba(96,165,250,.1); }
 .day.out { opacity: .38; }
-.day-num { font-weight: 900; margin-bottom: 8px; }
+.day-num {
+  flex: 0 0 auto;
+  font-weight: 900;
+  margin-bottom: 8px;
+}
+.day-events {
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  padding-right: 2px;
+  scrollbar-width: thin;
+}
 .event-mini {
+  flex: 0 0 auto;
+  display: block;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
   font-size: 11px;
   line-height: 1.25;
   padding: 5px 6px;
   border-radius: 8px;
-  margin-bottom: 5px;
   background: rgba(96,165,250,.16);
   color: #dbeafe;
+  cursor: help;
+}
+.event-label {
+  display: block;
+  max-width: 100%;
+  min-width: 0;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
-.event-mini.task { background: rgba(167,139,250,.16); color: #ede9fe; }
+.event-mini.task {
+  background: rgba(167,139,250,.16);
+  color: #ede9fe;
+  cursor: default;
+}
 .month-controls { display:flex; align-items:center; gap:10px; margin-bottom:14px; }
 
 .timer-display { font-size: 78px; font-weight: 900; letter-spacing: -0.06em; text-align: center; margin: 24px 0; }
@@ -322,31 +366,28 @@ textarea { resize: vertical; min-height: 110px; }
   .topbar { flex-direction: column; }
   .grid.cols-2, .grid.cols-3, .grid.cols-4, .form-grid { grid-template-columns: 1fr; }
   .calendar { grid-template-columns: 1fr; }
+  .day { height: auto; max-height: none; }
+  .day-events { max-height: none; overflow: visible; }
   .day-head { display:none; }
   .timer-display { font-size: 56px; }
 }
 
-.has-tooltip { position: relative; overflow: visible; }
-.event-tooltip {
-  display: none;
-  position: absolute;
-  left: 8px;
-  top: 28px;
-  z-index: 30;
-  width: min(360px, 82vw);
+#globalTooltip {
+  position: fixed;
+  z-index: 9999;
+  width: min(380px, calc(100vw - 32px));
   border: 1px solid rgba(148, 163, 184, 0.32);
   border-radius: 16px;
   background: #020617;
   color: #e2e8f0;
-  box-shadow: 0 22px 70px rgba(0,0,0,.45);
+  box-shadow: 0 22px 70px rgba(0,0,0,.52);
   padding: 12px;
   white-space: normal;
   line-height: 1.45;
+  pointer-events: none;
 }
-.event-tooltip b { display: block; color: white; margin-bottom: 6px; }
-.event-tooltip span { display: block; color: #cbd5e1; }
-.event-tooltip .room { color: #fde68a; font-weight: 800; }
-.has-tooltip:hover .event-tooltip { display: block; }
-.calendar { overflow: visible; }
-.day { overflow: visible; }
+#globalTooltip b { display: block; color: white; margin-bottom: 6px; }
+#globalTooltip span { display: block; color: #cbd5e1; }
+#globalTooltip .room { color: #fde68a; font-weight: 800; }
+#globalTooltip .desc { margin-top: 8px; color: #94a3b8; }
 .session-row { position: relative; }

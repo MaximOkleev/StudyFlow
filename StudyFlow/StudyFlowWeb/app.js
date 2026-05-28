@@ -191,7 +191,7 @@ function renderShell(content, title, subtitle, actions = "") {
     <div class="app-shell">
       <aside class="sidebar">
         <div class="brand">
-          <div class="logo">SF</div>
+          <div class="logo"><img src="assets/studyflow-icon.svg" alt="StudyFlow"></div>
           <div><h1>StudyFlow</h1><p>Web/local версия</p></div>
         </div>
         <nav class="nav">
@@ -287,6 +287,56 @@ function examTooltipHtml(e) {
     <span class="room">Аудитория: ${escapeHtml(e.location || "не указана")}</span>
     ${e.teachers ? `<span>Преподаватель: ${escapeHtml(e.teachers)}</span>` : ""}
   </div>`;
+}
+
+function examTooltipContent(e) {
+  const subject = subjectByName(e.subject);
+  return `
+    <b>${escapeHtml(e.subject)}</b>
+    <span>Дата: ${formatDate(e.start)}</span>
+    <span>Время: ${formatTime(e.start)}–${formatTime(e.end)}</span>
+    <span class="room">Аудитория: ${escapeHtml(e.location || "не указана")}</span>
+    ${e.teachers ? `<span>Преподаватель: ${escapeHtml(e.teachers)}</span>` : ""}
+    ${subject?.description ? `<span class="desc">${escapeHtml(subject.description)}</span>` : ""}
+  `;
+}
+
+function ensureGlobalTooltip() {
+  let el = document.getElementById("globalTooltip");
+  if (!el) {
+    el = document.createElement("div");
+    el.id = "globalTooltip";
+    el.className = "hidden";
+    document.body.appendChild(el);
+  }
+  return el;
+}
+
+function showExamTooltip(ev, id) {
+  const exam = state.exams.find(e => e.id === id);
+  if (!exam) return;
+  const tip = ensureGlobalTooltip();
+  tip.innerHTML = examTooltipContent(exam);
+  tip.classList.remove("hidden");
+  moveExamTooltip(ev);
+}
+
+function moveExamTooltip(ev) {
+  const tip = document.getElementById("globalTooltip");
+  if (!tip || tip.classList.contains("hidden")) return;
+  const gap = 16;
+  let x = ev.clientX + gap;
+  let y = ev.clientY + gap;
+  const rect = tip.getBoundingClientRect();
+  if (x + rect.width > window.innerWidth - 12) x = ev.clientX - rect.width - gap;
+  if (y + rect.height > window.innerHeight - 12) y = ev.clientY - rect.height - gap;
+  tip.style.left = `${Math.max(12, x)}px`;
+  tip.style.top = `${Math.max(12, y)}px`;
+}
+
+function hideExamTooltip() {
+  const tip = document.getElementById("globalTooltip");
+  if (tip) tip.classList.add("hidden");
 }
 
 function examRow(e) {
@@ -489,8 +539,10 @@ function renderDay(d, currentMonth) {
   const tasks = state.tasks.filter(t => t.deadline === key);
   return `<div class="day ${d.getMonth() !== currentMonth ? "out" : ""} ${key === todayISO() ? "today" : ""}">
     <div class="day-num">${d.getDate()}</div>
-    ${exams.map(e => `<div class="event-mini has-tooltip" title="${escapeHtml(examDetailsText(e))}">${formatTime(e.start)} ${escapeHtml(e.subject)}${examTooltipHtml(e)}</div>`).join("")}
-    ${tasks.map(t => `<div class="event-mini task" title="${escapeHtml(t.title)}">✓ ${escapeHtml(t.title)}</div>`).join("")}
+    <div class="day-events">
+      ${exams.map(e => `<div class="event-mini" title="${escapeHtml(examDetailsText(e))}" onmouseenter="showExamTooltip(event, '${escapeHtml(e.id)}')" onmousemove="moveExamTooltip(event)" onmouseleave="hideExamTooltip()"><span class="event-label">${formatTime(e.start)} ${escapeHtml(e.subject)}</span></div>`).join("")}
+      ${tasks.map(t => `<div class="event-mini task" title="${escapeHtml(t.title)}"><span class="event-label">✓ ${escapeHtml(t.title)}</span></div>`).join("")}
+    </div>
   </div>`;
 }
 
