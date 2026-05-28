@@ -86,3 +86,13 @@ tasks.register("coverage") {
         println("Coverage report generated at: build/reports/jacoco/test/html/index.html")
     }
 }
+
+
+tasks.register<JavaExec>("runWeb") {
+    group = "application"
+    description = "Run local StudyFlow Web server at http://127.0.0.1:5173 using the same SQLite database as desktop."
+    mainClass.set("studyflow.web.StudyFlowWebServerKt")
+    classpath = sourceSets.main.get().runtimeClasspath
+    workingDir = rootProject.projectDir
+    args("--port=5173")
+}
