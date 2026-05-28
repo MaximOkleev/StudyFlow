@@ -32,7 +32,7 @@ Open the folder in IntelliJ IDEA as a Gradle project and run `studyflow.MainKt` 
 
 ```bash
 cd StudyFlow
-gradle :app:run
+./gradlew :app:run
 ```
 
 If you want a Gradle Wrapper later:
