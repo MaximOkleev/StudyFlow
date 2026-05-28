@@ -191,7 +191,7 @@ function renderShell(content, title, subtitle, actions = "") {
     <div class="app-shell">
       <aside class="sidebar">
         <div class="brand">
-          <div class="logo"><img src="assets/studyflow-icon.svg" alt="StudyFlow"></div>
+          <div class="logo"><img src="assets/studyflow-logo-v2.svg?v=2" alt="StudyFlow"></div>
           <div><h1>StudyFlow</h1><p>Web/local версия</p></div>
         </div>
         <nav class="nav">

@@ -1,5 +1,13 @@
 package studyflow.presentation.components
 
+import androidx.compose.ui.graphics.StrokeJoin
+import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -38,15 +46,7 @@ fun Sidebar(current: AppScreen, compact: Boolean = false, onSelect: (AppScreen) 
         verticalArrangement = Arrangement.spacedBy(10.dp)
     ) {
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-            Box(
-                modifier = Modifier
-                    .size(42.dp)
-                    .clip(RoundedCornerShape(14.dp))
-                    .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.92f)),
-                contentAlignment = Alignment.Center
-            ) {
-                Text("✓", color = Color.White, fontSize = 24.sp, fontWeight = FontWeight.Black)
-            }
+            StudyFlowLogo(modifier = Modifier.size(44.dp))
             if (!compact) {
                 Column(verticalArrangement = Arrangement.spacedBy(1.dp)) {
                     Text("StudyFlow", color = Color.White, fontSize = 25.sp, fontWeight = FontWeight.Bold)
@@ -98,4 +98,62 @@ private fun iconFor(screen: AppScreen): String = when (screen) {
     AppScreen.Timer -> "◉"
     AppScreen.Statistics -> "↗"
     AppScreen.Settings -> "⚙"
+}
+
+
+@Composable
+private fun StudyFlowLogo(modifier: Modifier = Modifier) {
+    Canvas(modifier = modifier) {
+        val w = size.width
+        val h = size.height
+        drawRoundRect(
+            brush = Brush.linearGradient(
+                colors = listOf(Color(0xFF22D3EE), Color(0xFF3B82F6), Color(0xFF7C3AED), Color(0xFF111827)),
+                start = Offset(0f, 0f),
+                end = Offset(w, h)
+            ),
+            size = Size(w, h),
+            cornerRadius = androidx.compose.ui.geometry.CornerRadius(w * 0.28f, h * 0.28f)
+        )
+        drawRoundRect(
+            color = Color.White.copy(alpha = 0.94f),
+            topLeft = Offset(w * 0.22f, h * 0.18f),
+            size = Size(w * 0.56f, h * 0.64f),
+            cornerRadius = androidx.compose.ui.geometry.CornerRadius(w * 0.12f, h * 0.12f)
+        )
+        drawRoundRect(
+            color = Color(0xFF0F172A).copy(alpha = 0.18f),
+            topLeft = Offset(w * 0.31f, h * 0.31f),
+            size = Size(w * 0.38f, h * 0.07f),
+            cornerRadius = androidx.compose.ui.geometry.CornerRadius(w * 0.035f, h * 0.035f)
+        )
+        drawRoundRect(
+            color = Color(0xFF0F172A).copy(alpha = 0.12f),
+            topLeft = Offset(w * 0.31f, h * 0.45f),
+            size = Size(w * 0.30f, h * 0.06f),
+            cornerRadius = androidx.compose.ui.geometry.CornerRadius(w * 0.03f, h * 0.03f)
+        )
+        val flow = Path().apply {
+            moveTo(w * 0.30f, h * 0.67f)
+            cubicTo(w * 0.42f, h * 0.50f, w * 0.53f, h * 0.69f, w * 0.66f, h * 0.52f)
+        }
+        drawPath(
+            path = flow,
+            color = Color(0xFF3B82F6),
+            style = Stroke(width = w * 0.08f, cap = StrokeCap.Round, join = StrokeJoin.Round)
+        )
+        drawCircle(Color(0xFF22D3EE), radius = w * 0.065f, center = Offset(w * 0.30f, h * 0.67f))
+        drawCircle(Color(0xFF8B5CF6), radius = w * 0.065f, center = Offset(w * 0.66f, h * 0.52f))
+        drawCircle(Color(0xFF0B1220), radius = w * 0.17f, center = Offset(w * 0.70f, h * 0.72f))
+        val check = Path().apply {
+            moveTo(w * 0.61f, h * 0.72f)
+            lineTo(w * 0.68f, h * 0.79f)
+            lineTo(w * 0.82f, h * 0.62f)
+        }
+        drawPath(
+            path = check,
+            color = Color(0xFF34D399),
+            style = Stroke(width = w * 0.07f, cap = StrokeCap.Round, join = StrokeJoin.Round)
+        )
+    }
 }

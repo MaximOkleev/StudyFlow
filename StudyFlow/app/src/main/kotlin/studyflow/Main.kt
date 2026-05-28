@@ -5,6 +5,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Window
 import androidx.compose.ui.window.application
 import androidx.compose.ui.window.rememberWindowState
+import androidx.compose.ui.res.painterResource
 import java.awt.Dimension
 import studyflow.data.WindowPreferences
 
@@ -18,6 +19,7 @@ fun main() = application {
             exitApplication()
         },
         title = "StudyFlow",
+        icon = painterResource("icons/studyflow-icon.png"),
         state = windowState
     ) {
         window.minimumSize = Dimension(980, 680)

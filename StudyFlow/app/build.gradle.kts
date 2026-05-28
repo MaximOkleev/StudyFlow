@@ -10,7 +10,7 @@ plugins {
 }
 
 group = "dev.studyflow"
-version = "1.1.4"
+version = "1.1.5"
 
 val nativeAccessJvmArgs = listOf("--enable-native-access=ALL-UNNAMED")
 
@@ -47,9 +47,12 @@ compose.desktop {
         nativeDistributions {
             targetFormats(TargetFormat.Dmg, TargetFormat.Msi, TargetFormat.Deb)
             packageName = "StudyFlow"
-            packageVersion = "1.1.4"
+            packageVersion = "1.1.5"
             description = "Desktop study planner with tasks, notes, focus timer and statistics."
             copyright = "2026 StudyFlow"
+            windows {
+                iconFile.set(project.file("src/main/resources/icons/studyflow-icon.ico"))
+            }
         }
     }
 }
