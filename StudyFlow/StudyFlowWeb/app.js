@@ -18,11 +18,11 @@ const ROUTES = [
 
 const STATUS_LABELS = { todo: "To do", progress: "In progress", done: "Done" };
 const PRIORITY_LABELS = { low: "Low", medium: "Medium", high: "High" };
-const RECURRENCE_LABELS = { none: "No repeat", daily: "Daily", weekly: "Weekly", monthly: "Monthly" };
+const RECURRENCE_LABELS = { none: "No repeat", daily: "Daily", weekly: "Weekly", monthly: "Monthly", yearly: "Yearly" };
 
 let state = loadState();
 let route = localStorage.getItem("studyflow.web.route") || "dashboard";
-let filters = { search: "", subject: "", status: "all", priority: "all" };
+let filters = { search: "", subject: "", status: "all", priority: "all", scope: "all" };
 let calendarCursor = new Date();
 let timer = {
   running: false,
@@ -39,7 +39,7 @@ function defaultState() {
   return {
     subjects: structuredClone(SEED_SUBJECTS),
     exams: structuredClone(SEED_EXAMS),
-    tasks: [],
+    tasks: structuredClone(SEED_TASKS || []),
     notes: [],
     habits: [],
     focusSessions: [],
@@ -47,12 +47,25 @@ function defaultState() {
   };
 }
 
+
+function seedTaskKey(t) {
+  return `${(t.title || "").toLowerCase()}|${t.deadline || ""}`;
+}
+
+function withBuiltInTasks(snapshot) {
+  const existing = new Set((snapshot.tasks || []).map(seedTaskKey));
+  const missing = (SEED_TASKS || []).filter(t => !existing.has(seedTaskKey(t))).map(t => ({ ...t }));
+  if (missing.length) snapshot.tasks = [...(snapshot.tasks || []), ...missing];
+  snapshot.settings = { ...(snapshot.settings || {}), seedTasksVersion: "2026-basic-v1" };
+  return snapshot;
+}
+
 function loadState() {
   try {
     const raw = localStorage.getItem(STORE_KEY);
     if (!raw) return defaultState();
     const parsed = JSON.parse(raw);
-    return {
+    return withBuiltInTasks({
       ...defaultState(),
       ...parsed,
       subjects: parsed.subjects || [],
@@ -62,7 +75,7 @@ function loadState() {
       habits: parsed.habits || [],
       focusSessions: parsed.focusSessions || [],
       settings: { ...defaultState().settings, ...(parsed.settings || {}) }
-    };
+    });
   } catch {
     return defaultState();
   }
@@ -77,8 +90,9 @@ async function connectBackend() {
   try {
     const res = await fetch("/api/snapshot", { cache: "no-store" });
     if (!res.ok) throw new Error("Backend unavailable");
-    state = await res.json();
+    state = withBuiltInTasks(await res.json());
     apiMode = true;
+    scheduleApiSave();
     localStorage.setItem(STORE_KEY, JSON.stringify(state));
   } catch (e) {
     apiMode = false;
@@ -160,7 +174,7 @@ function subjectByName(name) {
 
 function subjectPill(name) {
   const s = subjectByName(name);
-  if (!s) return `<span class="badge">${escapeHtml(name || "Без предмета")}</span>`;
+  if (!s) return `<span class="badge">${escapeHtml(name || "Обычная задача")}</span>`;
   return `<span class="subject-pill"><span class="subject-dot" style="background:${s.color}"></span>${escapeHtml(s.name)}</span>`;
 }
 
@@ -381,7 +395,7 @@ function taskRow(t) {
   return `<div class="row">
     <div>
       <div class="row-title">${escapeHtml(t.title)}</div>
-      <div class="row-meta">${subjectPill(t.subject)} ${t.deadline ? " • дедлайн: " + formatDate(t.deadline) : ""}</div>
+      <div class="row-meta">${subjectPill(t.subject)} ${t.category === "birthday" ? " • день рождения" : t.category === "holiday" ? " • праздник" : ""} ${t.deadline ? " • дата: " + formatDate(t.deadline) : ""}</div>
       <div class="badges">${statusBadge(t.status)} ${priorityBadge(t.priority)} ${t.recurrence !== "none" ? `<span class="badge">${RECURRENCE_LABELS[t.recurrence]}</span>` : ""}</div>
     </div>
     <div class="actions">
@@ -417,6 +431,9 @@ function filteredTasks() {
   const q = filters.search.trim().toLowerCase();
   return state.tasks.filter(t => {
     if (q && !`${t.title} ${t.description || ""} ${t.subject || ""}`.toLowerCase().includes(q)) return false;
+    if (filters.scope === "subject" && !t.subject) return false;
+    if (filters.scope === "general" && t.subject) return false;
+    if (filters.scope === "special" && !(t.category === "birthday" || t.category === "holiday" || (t.description || "").toLowerCase().includes("тип: праздник") || (t.description || "").toLowerCase().includes("тип: день рождения"))) return false;
     if (filters.subject && t.subject !== filters.subject) return false;
     if (filters.status !== "all" && t.status !== filters.status) return false;
     if (filters.priority !== "all" && t.priority !== filters.priority) return false;
@@ -427,6 +444,12 @@ function filteredTasks() {
 function renderTasks() {
   const tasks = filteredTasks();
   renderShell(`
+    <div class="task-tabs">
+      <button class="chip ${filters.scope === "all" ? "active" : ""}" onclick="filters.scope='all'; renderTasks()">Все</button>
+      <button class="chip ${filters.scope === "subject" ? "active" : ""}" onclick="filters.scope='subject'; renderTasks()">Предметные</button>
+      <button class="chip ${filters.scope === "general" ? "active" : ""}" onclick="filters.scope='general'; renderTasks()">Обычные</button>
+      <button class="chip ${filters.scope === "special" ? "active" : ""}" onclick="filters.scope='special'; renderTasks()">Праздники и ДР</button>
+    </div>
     <div class="toolbar">
       <input class="input" style="min-width:260px" placeholder="Поиск задач" value="${escapeHtml(filters.search)}" oninput="filters.search=this.value; renderTasks()" />
       <select class="select" onchange="filters.subject=this.value; renderTasks()">${subjectOptions(filters.subject, true)}</select>
@@ -449,7 +472,14 @@ function openTaskModal(id = "") {
     <h3>${t ? "Редактировать задачу" : "Новая задача"}</h3>
     <div class="form-grid">
       <label class="full">Название<br><input id="taskTitle" class="input wide" value="${escapeHtml(t?.title || "")}" /></label>
-      <label class="full">Предмет<br><select id="taskSubject" class="select wide">${subjectOptions(t?.subject || "")}</select></label>
+      <label class="full">Тип / предмет<br><select id="taskSubject" class="select wide">${subjectOptions(t?.subject || "")}</select><span class="hint">Оставь «Обычная задача», если задача не относится к предмету.</span></label>
+      <label class="full">Быстрый шаблон<br><select id="taskTemplate" class="select wide" onchange="applyTaskTemplate(this.value)">
+        <option value="">Выбрать шаблон</option>
+        <option value="basic">Базовая задача</option>
+        <option value="birthday">День рождения</option>
+        <option value="holiday">Праздник</option>
+        <option value="study">Учебная подготовка</option>
+      </select></label>
       <label>Статус<br><select id="taskStatus" class="select wide">${Object.entries(STATUS_LABELS).map(([k,v]) => `<option value="${k}" ${t?.status === k ? "selected" : ""}>${v}</option>`).join("")}</select></label>
       <label>Приоритет<br><select id="taskPriority" class="select wide">${Object.entries(PRIORITY_LABELS).map(([k,v]) => `<option value="${k}" ${(t?.priority || "medium") === k ? "selected" : ""}>${v}</option>`).join("")}</select></label>
       <label>Дедлайн<br><input id="taskDeadline" type="date" class="input wide" value="${escapeHtml(t?.deadline || "")}" /></label>
@@ -464,6 +494,39 @@ function openTaskModal(id = "") {
     </div>`);
 }
 
+
+function applyTaskTemplate(kind) {
+  if (!kind) return;
+  if (kind === "basic") {
+    document.getElementById("taskTitle").value = "Базовая задача";
+    document.getElementById("taskDescription").value = "Обычная задача без привязки к предмету";
+    document.getElementById("taskSubject").value = "";
+  }
+  if (kind === "birthday") {
+    document.getElementById("taskTitle").value = "День рождения";
+    document.getElementById("taskDescription").value = "Тип: день рождения • Купить подарок / поздравить";
+    document.getElementById("taskSubject").value = "";
+    document.getElementById("taskRecurrence").value = "yearly";
+  }
+  if (kind === "holiday") {
+    document.getElementById("taskTitle").value = "Праздник";
+    document.getElementById("taskDescription").value = "Тип: праздник • Ежегодное напоминание";
+    document.getElementById("taskSubject").value = "";
+    document.getElementById("taskRecurrence").value = "yearly";
+  }
+  if (kind === "study") {
+    document.getElementById("taskTitle").value = "Подготовиться к занятию";
+    document.getElementById("taskDescription").value = "Повторить материалы, закрыть хвосты и подготовить вопросы";
+  }
+}
+
+function detectTaskCategory(description, title = "") {
+  const text = `${description || ""} ${title || ""}`.toLowerCase();
+  if (text.includes("день рождения") || text.includes("др")) return "birthday";
+  if (text.includes("тип: праздник") || text.includes("праздник:")) return "holiday";
+  return "custom";
+}
+
 function saveTask(id = "") {
   const payload = {
     title: val("taskTitle").trim(),
@@ -473,7 +536,8 @@ function saveTask(id = "") {
     deadline: val("taskDeadline"),
     recurrence: val("taskRecurrence") || "none",
     estimatedMinutes: Number(val("taskEstimate")) || 0,
-    description: val("taskDescription")
+    description: val("taskDescription"),
+    category: detectTaskCategory(val("taskDescription"), val("taskTitle"))
   };
   if (!payload.title) return toast("Введите название задачи");
   if (id) {
@@ -507,6 +571,7 @@ function addRecurrence(date, recurrence) {
   if (recurrence === "daily") d.setDate(d.getDate() + 1);
   if (recurrence === "weekly") d.setDate(d.getDate() + 7);
   if (recurrence === "monthly") d.setMonth(d.getMonth() + 1);
+  if (recurrence === "yearly") d.setFullYear(d.getFullYear() + 1);
   return localDateKey(d);
 }
 
@@ -730,7 +795,7 @@ function deleteHabit(id) { if(confirm("Удалить привычку?")){ stat
 function renderSettings() {
   renderShell(`
     <div class="grid cols-2">
-      <section class="card"><h3>Стартовые данные</h3><p>Можно заново загрузить предметы и полное расписание сессии.</p><div class="actions" style="justify-content:flex-start"><button class="btn" onclick="loadSeedSubjects()">Load semester subjects</button><button class="btn" onclick="loadSeedExams()">Load session schedule</button></div></section>
+      <section class="card"><h3>Стартовые данные</h3><p>Можно заново загрузить предметы и полное расписание сессии.</p><div class="actions" style="justify-content:flex-start"><button class="btn" onclick="loadSeedSubjects()">Load semester subjects</button><button class="btn" onclick="loadSeedExams()">Load session schedule</button><button class="btn" onclick="loadSeedTasks()">Load basic tasks / holidays</button></div></section>
       <section class="card"><h3>Backup</h3><p>JSON backup переносит данные между браузерами и ноутбуками.</p><div class="actions" style="justify-content:flex-start"><button class="btn" onclick="exportJson()">Export JSON</button><button class="btn" onclick="pickFile('json')">Import JSON</button></div></section>
       <section class="card"><h3>CSV / Markdown</h3><div class="actions" style="justify-content:flex-start"><button class="btn" onclick="exportTasksCsv()">Export tasks CSV</button><button class="btn" onclick="pickFile('tasks')">Import tasks CSV</button><button class="btn" onclick="exportSubjectsCsv()">Export subjects CSV</button><button class="btn" onclick="pickFile('subjects')">Import subjects CSV</button><button class="btn" onclick="exportNotesMd()">Export notes MD</button><button class="btn" onclick="pickFile('notes')">Import notes MD</button></div></section>
       <section class="card"><h3>Синхронизация с Desktop</h3><p>${apiMode ? "Включена: сайт читает и пишет ту же SQLite-базу, что и desktop-версия." : "Выключена: открой сайт через run-web.bat / gradlew :app:runWeb."}</p><div class="actions" style="justify-content:flex-start"><button class="btn" onclick="reloadFromBackend()">Reload from SQLite</button><button class="btn" onclick="saveToBackendNow()">Save to SQLite</button></div></section>
@@ -742,6 +807,7 @@ function renderSettings() {
 
 function loadSeedSubjects() { state.subjects = structuredClone(SEED_SUBJECTS); saveState(); render(); toast("Предметы загружены"); }
 function loadSeedExams() { state.exams = structuredClone(SEED_EXAMS); saveState(); render(); toast("Расписание сессии загружено"); }
+function loadSeedTasks() { state = withBuiltInTasks(state); saveState(); render(); toast("Базовые задачи, дни рождения и праздники загружены"); }
 function clearAll() { if(confirm("Удалить все web-данные?")) { state = { ...defaultState(), tasks: [], notes: [], habits: [], focusSessions: [] }; saveState(); render(); toast("Очищено"); } }
 
 function exportJson() { download("studyflow_web_backup.json", JSON.stringify(state, null, 2), "application/json"); }

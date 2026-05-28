@@ -6,14 +6,17 @@ import studyflow.domain.model.Habit
 import studyflow.domain.model.Note
 import studyflow.domain.model.Subject
 import studyflow.domain.model.StudyTask
+import studyflow.domain.model.Recurrence
+import studyflow.domain.model.TaskPriority
+import studyflow.domain.model.TaskStatus
 import studyflow.util.DateUtils
 import java.time.LocalDateTime
 
 /**
  * Starter curriculum data for the current semester.
  *
- * The app still starts without tasks, notes, habits and focus sessions. Only
- * subjects are preloaded so the user can immediately create their own tasks.
+ * The app starts with semester subjects, session schedule, and a small set of
+ * general yearly reminders: birthdays and main Russian public holidays.
  */
 object SeedData {
     fun subjects(): List<Subject> {
@@ -95,7 +98,44 @@ object SeedData {
         )
     }
 
-    fun tasks(): List<StudyTask> = emptyList()
+    fun tasks(): List<StudyTask> {
+        val now = DateUtils.nowMillis()
+        fun date(month: Int, day: Int) = DateUtils.dateToMillis(java.time.LocalDate.of(2026, month, day))
+        fun task(id: Long, title: String, month: Int, day: Int, description: String, priority: TaskPriority = TaskPriority.Medium) = StudyTask(
+            id = id,
+            subjectId = 0L,
+            title = title,
+            description = description,
+            status = TaskStatus.Todo,
+            priority = priority,
+            deadlineAt = date(month, day),
+            estimatedMinutes = null,
+            spentMinutes = 0,
+            createdAt = now,
+            completedAt = null,
+            recurrence = Recurrence.Yearly,
+            sourceRecurringTaskId = null
+        )
+        return listOf(
+            task(1, "🎂 Мой день рождения", 6, 9, "Тип: день рождения • Ежегодное напоминание"),
+            task(2, "🎂 День рождения Вани", 1, 20, "Тип: день рождения • Ежегодное напоминание"),
+            task(3, "🎂 День рождения Артёма", 1, 4, "Тип: день рождения • Ежегодное напоминание"),
+            task(4, "Праздник: Новогодние каникулы — 1 января", 1, 1, "Тип: праздник • Нерабочий праздничный день РФ"),
+            task(5, "Праздник: Новогодние каникулы — 2 января", 1, 2, "Тип: праздник • Нерабочий праздничный день РФ"),
+            task(6, "Праздник: Новогодние каникулы — 3 января", 1, 3, "Тип: праздник • Нерабочий праздничный день РФ"),
+            task(7, "Праздник: Новогодние каникулы — 4 января", 1, 4, "Тип: праздник • Нерабочий праздничный день РФ"),
+            task(8, "Праздник: Новогодние каникулы — 5 января", 1, 5, "Тип: праздник • Нерабочий праздничный день РФ"),
+            task(9, "Праздник: Новогодние каникулы — 6 января", 1, 6, "Тип: праздник • Нерабочий праздничный день РФ"),
+            task(10, "Праздник: Рождество Христово", 1, 7, "Тип: праздник • Нерабочий праздничный день РФ"),
+            task(11, "Праздник: Новогодние каникулы — 8 января", 1, 8, "Тип: праздник • Нерабочий праздничный день РФ"),
+            task(12, "Праздник: День защитника Отечества", 2, 23, "Тип: праздник • Нерабочий праздничный день РФ"),
+            task(13, "Праздник: Международный женский день", 3, 8, "Тип: праздник • Нерабочий праздничный день РФ"),
+            task(14, "Праздник: Праздник Весны и Труда", 5, 1, "Тип: праздник • Нерабочий праздничный день РФ"),
+            task(15, "Праздник: День Победы", 5, 9, "Тип: праздник • Нерабочий праздничный день РФ"),
+            task(16, "Праздник: День России", 6, 12, "Тип: праздник • Нерабочий праздничный день РФ"),
+            task(17, "Праздник: День народного единства", 11, 4, "Тип: праздник • Нерабочий праздничный день РФ")
+        )
+    }
     fun notes(): List<Note> = emptyList()
     fun focusSessions(): List<FocusSession> = emptyList()
     fun habits(): List<Habit> = emptyList()

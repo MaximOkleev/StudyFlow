@@ -5,9 +5,9 @@ import kotlin.test.assertTrue
 
 class SeedDataTest {
     @Test
-    fun starterDataContainsOnlySubjectsByDefault() {
+    fun starterDataContainsSubjectsAndBasicTasks() {
         assertTrue(SeedData.subjects().isNotEmpty())
-        assertTrue(SeedData.tasks().isEmpty())
+        assertTrue(SeedData.tasks().isNotEmpty())
         assertTrue(SeedData.notes().isEmpty())
         assertTrue(SeedData.focusSessions().isEmpty())
         assertTrue(SeedData.habits().isEmpty())

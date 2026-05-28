@@ -38,6 +38,7 @@ fun TasksScreen(repository: StudyRepository) {
     var statusFilter by remember { mutableStateOf<TaskStatus?>(null) }
     var priorityFilter by remember { mutableStateOf<TaskPriority?>(null) }
     var subjectFilter by remember { mutableStateOf<Long?>(null) }
+    var taskScope by remember { mutableStateOf("all") }
     var search by remember { mutableStateOf("") }
     var showAdd by remember { mutableStateOf(false) }
     var editing by remember { mutableStateOf<StudyTask?>(null) }
@@ -46,6 +47,7 @@ fun TasksScreen(repository: StudyRepository) {
     val tasks = repository.tasks
         .filter { statusFilter == null || it.status == statusFilter }
         .filter { priorityFilter == null || it.priority == priorityFilter }
+        .filter { taskScope == "all" || (taskScope == "subject" && it.subjectId != 0L) || (taskScope == "general" && it.subjectId == 0L) || (taskScope == "special" && (it.description.contains("Тип: праздник", true) || it.description.contains("Тип: день рождения", true))) }
         .filter { subjectFilter == null || it.subjectId == subjectFilter }
         .filter { search.isBlank() || it.title.contains(search, ignoreCase = true) || it.description.contains(search, ignoreCase = true) }
         .sortedWith(compareBy<StudyTask> { it.deadlineAt ?: Long.MAX_VALUE }.thenByDescending { it.priority.ordinal })
@@ -53,13 +55,19 @@ fun TasksScreen(repository: StudyRepository) {
     ScreenScaffold(
         title = "Tasks",
         subtitle = "Plan work, move statuses and track time.",
-        action = { Button(enabled = repository.subjects.isNotEmpty(), onClick = { showAdd = true }, modifier = Modifier.testTag("tasks.new")) { Text("New task") } }
+        action = { Button(onClick = { showAdd = true }, modifier = Modifier.testTag("tasks.new")) { Text("New task") } }
     ) {
         Column(verticalArrangement = Arrangement.spacedBy(10.dp), modifier = Modifier.fillMaxWidth()) {
             Row(horizontalArrangement = Arrangement.spacedBy(10.dp), modifier = Modifier.fillMaxWidth()) {
                 FilterChip(selected = statusFilter == null, onClick = { statusFilter = null }, label = { Text("All") })
                 TaskStatus.entries.forEach { status -> FilterChip(selected = statusFilter == status, onClick = { statusFilter = status }, label = { Text(status.title) }) }
                 OutlinedTextField(search, { search = it }, label = { Text("Search") }, singleLine = true, modifier = Modifier.weight(1f).padding(start = 12.dp).testTag("tasks.search"))
+            }
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
+                FilterChip(selected = taskScope == "all", onClick = { taskScope = "all" }, label = { Text("Все") })
+                FilterChip(selected = taskScope == "subject", onClick = { taskScope = "subject" }, label = { Text("Предметные") })
+                FilterChip(selected = taskScope == "general", onClick = { taskScope = "general" }, label = { Text("Обычные") })
+                FilterChip(selected = taskScope == "special", onClick = { taskScope = "special" }, label = { Text("Праздники и ДР") })
             }
             SubjectDropdownField(
                 subjects = repository.subjects,
@@ -75,9 +83,7 @@ fun TasksScreen(repository: StudyRepository) {
                 TaskPriority.entries.forEach { priority -> FilterChip(selected = priorityFilter == priority, onClick = { priorityFilter = priority }, label = { Text(priority.title) }) }
             }
         }
-        if (repository.subjects.isEmpty()) {
-            EmptyState("No subjects yet. Create a subject first, then add tasks.", "Go to Subjects") {}
-        } else if (tasks.isEmpty()) {
+        if (tasks.isEmpty()) {
             EmptyState("No tasks match the current filter.", "Create task") { showAdd = true }
         } else LazyColumn(verticalArrangement = Arrangement.spacedBy(12.dp), modifier = Modifier.fillMaxSize()) {
             items(tasks) { task ->

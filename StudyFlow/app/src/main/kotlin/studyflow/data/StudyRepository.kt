@@ -49,7 +49,7 @@ class StudyRepository(
         val snapshot = store.load()
         if (snapshot == null) {
             subjects = if (seedOnFirstRun) SeedData.subjects() else emptyList()
-            tasks = emptyList()
+            tasks = if (seedOnFirstRun) SeedData.tasks() else emptyList()
             notes = emptyList()
             focusSessions = emptyList()
             habits = emptyList()
@@ -63,6 +63,7 @@ class StudyRepository(
             habits = snapshot.habits
             exams = snapshot.exams
             ensureExamLocations()
+            ensureBaseTasks()
         }
         recalcIds()
     }
@@ -85,6 +86,34 @@ class StudyRepository(
 
     private fun examKey(exam: Exam): String = "${exam.subjectName.lowercase()}|${exam.startAt}|${exam.endAt}"
 
+
+    private fun ensureBaseTasks() {
+        val seeds = SeedData.tasks()
+        val existingKeys = tasks.map { taskKey(it) }.toSet()
+        val missing = seeds.filter { taskKey(it) !in existingKeys }
+        if (missing.isNotEmpty()) {
+            var id = (tasks.maxOfOrNull { it.id } ?: 0L) + 1L
+            tasks = tasks + missing.map { it.copy(id = id++) }
+            save("Built-in holidays and birthdays loaded")
+        }
+    }
+
+    private fun taskKey(task: StudyTask): String = "${task.title.lowercase()}|${task.deadlineAt ?: 0L}"
+
+    fun loadBasicTasks(): Int {
+        val seeds = SeedData.tasks()
+        val existingKeys = tasks.map { taskKey(it) }.toSet()
+        val missing = seeds.filter { taskKey(it) !in existingKeys }
+        if (missing.isEmpty()) {
+            lastMessage = "Built-in personal tasks, birthdays and holidays are already loaded."
+            return 0
+        }
+        var id = nextTaskId
+        tasks = tasks + missing.map { it.copy(id = id++) }
+        save("Loaded ${missing.size} built-in personal tasks")
+        return missing.size
+    }
+
     fun subjectById(id: Long): Subject? = subjects.firstOrNull { it.id == id }
     fun taskById(id: Long): StudyTask? = tasks.firstOrNull { it.id == id }
     fun habitById(id: Long): Habit? = habits.firstOrNull { it.id == id }
@@ -92,7 +121,7 @@ class StudyRepository(
     fun examsForSubject(subjectId: Long): List<Exam> = exams.filter { it.subjectId == subjectId }
     fun tasksForSubject(subjectId: Long): List<StudyTask> = tasks.filter { it.subjectId == subjectId }
     fun notesForSubject(subjectId: Long): List<Note> = notes.filter { it.subjectId == subjectId }
-    fun subjectName(id: Long?): String = id?.let { subjectById(it)?.name } ?: "No subject"
+    fun subjectName(id: Long?): String = if (id == null || id == 0L) "Обычная задача" else subjectById(id)?.name ?: "Обычная задача"
 
     fun addSubject(name: String, description: String, colorHex: String, icon: String) {
         if (name.isBlank()) return
@@ -127,7 +156,7 @@ class StudyRepository(
         estimatedMinutes: Int?,
         recurrence: Recurrence = Recurrence.None
     ) {
-        if (title.isBlank() || subjects.none { it.id == subjectId }) return
+        if (title.isBlank() || (subjectId != 0L && subjects.none { it.id == subjectId })) return
         tasks = tasks + StudyTask(
             id = nextTaskId++,
             subjectId = subjectId,
@@ -161,7 +190,7 @@ class StudyRepository(
         estimatedMinutes: Int?,
         recurrence: Recurrence = task.recurrence
     ) {
-        if (subjects.none { it.id == subjectId }) return
+        if (subjectId != 0L && subjects.none { it.id == subjectId }) return
         val completed = if (status == TaskStatus.Done && task.completedAt == null) DateUtils.nowMillis() else if (status != TaskStatus.Done) null else task.completedAt
         var completedTask: StudyTask? = null
         tasks = tasks.map {

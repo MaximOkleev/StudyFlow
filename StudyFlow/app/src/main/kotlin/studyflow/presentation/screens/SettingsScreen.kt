@@ -44,6 +44,7 @@ fun SettingsScreen(repository: StudyRepository) {
                         Button(onClick = { repository.saveNow() }) { Text("Save now") }
                         Button(onClick = { repository.loadSemesterSubjects() }, modifier = Modifier.testTag("settings.load.semester.subjects")) { Text("Load semester subjects") }
                         Button(onClick = { repository.loadExamSchedule() }, modifier = Modifier.testTag("settings.load.exam.schedule")) { Text("Load session schedule") }
+                        Button(onClick = { repository.loadBasicTasks() }, modifier = Modifier.testTag("settings.load.basic.tasks")) { Text("Load basic tasks / holidays") }
                         OutlinedButton(onClick = { confirmClear = true }, modifier = Modifier.testTag("settings.clear.all")) { Text("Clear all data") }
                     }
                 }

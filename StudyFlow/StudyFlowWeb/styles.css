@@ -410,3 +410,5 @@ textarea { resize: vertical; min-height: 110px; }
 }
 #globalTooltip .tooltip-close:hover { background: rgba(255,255,255,.18); }
 .event-mini { touch-action: manipulation; }
+
+.task-tabs{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:10px}.chip{border:1px solid rgba(148,163,184,.35);background:rgba(15,23,42,.7);color:#cbd5e1;border-radius:999px;padding:9px 13px;font-weight:800;cursor:pointer}.chip.active{background:linear-gradient(135deg,#7c3aed,#2563eb);border-color:transparent;color:white}.hint{display:block;margin-top:6px;color:#94a3b8;font-size:12px}

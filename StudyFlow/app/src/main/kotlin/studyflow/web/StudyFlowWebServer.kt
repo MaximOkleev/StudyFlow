@@ -111,7 +111,7 @@ private fun ensureInitialDatabase(store: LocalStore): StoreSnapshot {
     if (existing != null) return existing
     val subjects = SeedData.subjects()
     val exams = SeedData.exams(subjects)
-    val snapshot = StoreSnapshot(subjects, emptyList(), emptyList(), emptyList(), emptyList(), exams)
+    val snapshot = StoreSnapshot(subjects, SeedData.tasks(), emptyList(), emptyList(), emptyList(), exams)
     store.save(snapshot.subjects, snapshot.tasks, snapshot.notes, snapshot.sessions, snapshot.habits, snapshot.exams)
     return snapshot
 }
@@ -233,14 +233,12 @@ private fun webSnapshotToStore(root: Map<*, *>): StoreSnapshot {
     val subjectByName = subjects.associateBy { it.name }
     val subjectById = subjects.associateBy { it.id }
     fun subjectIdByName(name: String): Long? = subjectByName[name]?.id ?: subjects.firstOrNull { it.name.equals(name, ignoreCase = true) }?.id
-    fun defaultSubjectId() = subjects.firstOrNull()?.id ?: 1L
-
     val tasks = arr(root["tasks"]).mapIndexed { idx, m ->
         val id = long(m["id"]) ?: (idx + 1L)
         val subjectName = str(m["subject"])
         StudyTask(
             id = id,
-            subjectId = subjectIdByName(subjectName) ?: defaultSubjectId(),
+            subjectId = subjectIdByName(subjectName) ?: 0L,
             title = str(m["title"]).ifBlank { "Task $id" },
             description = str(m["description"]),
             status = taskStatus(str(m["status"])),
@@ -326,7 +324,7 @@ private val TaskPriority.web: String get() = name.lowercase()
 private val Recurrence.web: String get() = name.lowercase()
 private fun taskStatus(v: String): TaskStatus = when (v.lowercase()) { "progress", "inprogress", "in progress" -> TaskStatus.InProgress; "done" -> TaskStatus.Done; else -> TaskStatus.Todo }
 private fun taskPriority(v: String): TaskPriority = when (v.lowercase()) { "low" -> TaskPriority.Low; "high" -> TaskPriority.High; else -> TaskPriority.Medium }
-private fun recurrence(v: String): Recurrence = when (v.lowercase()) { "daily" -> Recurrence.Daily; "weekly" -> Recurrence.Weekly; "monthly" -> Recurrence.Monthly; else -> Recurrence.None }
+private fun recurrence(v: String): Recurrence = when (v.lowercase()) { "daily" -> Recurrence.Daily; "weekly" -> Recurrence.Weekly; "monthly" -> Recurrence.Monthly; "yearly" -> Recurrence.Yearly; else -> Recurrence.None }
 
 private fun jsonString(value: String): String = buildString {
     append('"')

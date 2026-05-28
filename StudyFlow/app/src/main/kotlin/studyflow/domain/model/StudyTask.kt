@@ -40,12 +40,14 @@ enum class Recurrence(val title: String) {
     None("No repeat"),
     Daily("Daily"),
     Weekly("Weekly"),
-    Monthly("Monthly");
+    Monthly("Monthly"),
+    Yearly("Yearly");
 
     fun nextDate(date: LocalDate): LocalDate = when (this) {
         None -> date
         Daily -> date.plusDays(1)
         Weekly -> date.plusWeeks(1)
         Monthly -> date.plusMonths(1)
+        Yearly -> date.plusYears(1)
     }
 }

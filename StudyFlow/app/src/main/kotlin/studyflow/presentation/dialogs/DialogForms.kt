@@ -59,7 +59,7 @@ fun SubjectDialog(initial: Subject?, onDismiss: () -> Unit, onSave: (String, Str
 
 @Composable
 fun TaskDialog(subjects: List<Subject>, initial: StudyTask?, onDismiss: () -> Unit, onSave: (Long, String, String, TaskStatus, TaskPriority, Long?, Int?, Recurrence) -> Unit) {
-    var selectedSubjectId by remember { mutableStateOf(initial?.subjectId ?: subjects.firstOrNull()?.id ?: 0L) }
+    var selectedSubjectId by remember { mutableStateOf<Long?>(initial?.subjectId?.takeIf { it != 0L }) }
     var title by remember { mutableStateOf(initial?.title ?: "") }
     var description by remember { mutableStateOf(initial?.description ?: "") }
     var status by remember { mutableStateOf(initial?.status ?: TaskStatus.Todo) }
@@ -78,11 +78,19 @@ fun TaskDialog(subjects: List<Subject>, initial: StudyTask?, onDismiss: () -> Un
                 SubjectDropdownField(
                     subjects = subjects,
                     selectedSubjectId = selectedSubjectId,
-                    onSelected = { id -> if (id != null) selectedSubjectId = id },
-                    allowNone = false,
-                    label = "Subject",
+                    onSelected = { id -> selectedSubjectId = id },
+                    allowNone = true,
+                    noneLabel = "Обычная задача без предмета",
+                    label = "Тип: предметная или обычная задача",
                     modifier = Modifier.fillMaxWidth().testTag("task.subject.selector")
                 )
+                Text("Быстрый шаблон")
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    FilterChip(selected = false, onClick = { title = "Базовая задача"; description = "Обычная задача без привязки к предмету"; selectedSubjectId = null }, label = { Text("Базовая") })
+                    FilterChip(selected = false, onClick = { title = "День рождения"; description = "Тип: день рождения • Купить подарок / поздравить"; selectedSubjectId = null; recurrence = Recurrence.Yearly }, label = { Text("ДР") })
+                    FilterChip(selected = false, onClick = { title = "Праздник"; description = "Тип: праздник • Ежегодное напоминание"; selectedSubjectId = null; recurrence = Recurrence.Yearly }, label = { Text("Праздник") })
+                    FilterChip(selected = false, onClick = { title = "Подготовиться к занятию"; description = "Повторить материалы и закрыть хвосты" }, label = { Text("Учёба") })
+                }
                 OutlinedTextField(title, { title = it }, label = { Text("Title") }, modifier = Modifier.fillMaxWidth())
                 OutlinedTextField(description, { description = it }, label = { Text("Description") }, modifier = Modifier.fillMaxWidth())
                 Text("Status")
@@ -102,7 +110,7 @@ fun TaskDialog(subjects: List<Subject>, initial: StudyTask?, onDismiss: () -> Un
                 OutlinedTextField(estimate, { estimate = it.filter(Char::isDigit) }, label = { Text("Estimated minutes") }, modifier = Modifier.fillMaxWidth())
             }
         },
-        confirmButton = { Button(enabled = !deadlineInvalid && selectedSubjectId != 0L, onClick = { onSave(selectedSubjectId, title, description, status, priority, deadlineAt, estimate.toIntOrNull(), recurrence); onDismiss() }) { Text("Save") } },
+        confirmButton = { Button(enabled = !deadlineInvalid, onClick = { onSave(selectedSubjectId ?: 0L, title, description, status, priority, deadlineAt, estimate.toIntOrNull(), recurrence); onDismiss() }) { Text("Save") } },
         dismissButton = { OutlinedButton(onClick = onDismiss) { Text("Cancel") } }
     )
 }
