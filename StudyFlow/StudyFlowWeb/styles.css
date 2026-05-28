@@ -385,10 +385,28 @@ textarea { resize: vertical; min-height: 110px; }
   padding: 12px;
   white-space: normal;
   line-height: 1.45;
-  pointer-events: none;
+  pointer-events: auto;
 }
 #globalTooltip b { display: block; color: white; margin-bottom: 6px; }
 #globalTooltip span { display: block; color: #cbd5e1; }
 #globalTooltip .room { color: #fde68a; font-weight: 800; }
 #globalTooltip .desc { margin-top: 8px; color: #94a3b8; }
 .session-row { position: relative; }
+
+
+#globalTooltip .tooltip-close {
+  position: absolute;
+  top: 8px;
+  right: 10px;
+  border: 0;
+  border-radius: 999px;
+  width: 24px;
+  height: 24px;
+  cursor: pointer;
+  color: #e5e7eb;
+  background: rgba(255,255,255,.10);
+  font-size: 18px;
+  line-height: 20px;
+}
+#globalTooltip .tooltip-close:hover { background: rgba(255,255,255,.18); }
+.event-mini { touch-action: manipulation; }

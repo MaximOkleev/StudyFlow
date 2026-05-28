@@ -312,32 +312,61 @@ function ensureGlobalTooltip() {
   return el;
 }
 
-function showExamTooltip(ev, id) {
+let tooltipPinned = false;
+
+function showExamTooltip(ev, id, pinned = false) {
   const exam = state.exams.find(e => e.id === id);
   if (!exam) return;
   const tip = ensureGlobalTooltip();
-  tip.innerHTML = examTooltipContent(exam);
+  tooltipPinned = pinned;
+  tip.innerHTML = examTooltipContent(exam) + (pinned ? `<button class="tooltip-close" onclick="hideExamTooltip(true)">×</button>` : "");
   tip.classList.remove("hidden");
+  tip.setAttribute("data-exam-id", id);
   moveExamTooltip(ev);
 }
 
 function moveExamTooltip(ev) {
   const tip = document.getElementById("globalTooltip");
   if (!tip || tip.classList.contains("hidden")) return;
+  const point = ev.touches?.[0] || ev.changedTouches?.[0] || ev;
   const gap = 16;
-  let x = ev.clientX + gap;
-  let y = ev.clientY + gap;
+  let x = point.clientX + gap;
+  let y = point.clientY + gap;
   const rect = tip.getBoundingClientRect();
-  if (x + rect.width > window.innerWidth - 12) x = ev.clientX - rect.width - gap;
-  if (y + rect.height > window.innerHeight - 12) y = ev.clientY - rect.height - gap;
+  if (x + rect.width > window.innerWidth - 12) x = point.clientX - rect.width - gap;
+  if (y + rect.height > window.innerHeight - 12) y = point.clientY - rect.height - gap;
   tip.style.left = `${Math.max(12, x)}px`;
   tip.style.top = `${Math.max(12, y)}px`;
 }
 
-function hideExamTooltip() {
+function hideExamTooltip(force = false) {
+  if (tooltipPinned && !force) return;
   const tip = document.getElementById("globalTooltip");
-  if (tip) tip.classList.add("hidden");
+  if (tip) {
+    tip.classList.add("hidden");
+    tip.removeAttribute("data-exam-id");
+  }
+  tooltipPinned = false;
 }
+
+function bindCalendarTooltips() {
+  document.querySelectorAll(".event-mini[data-exam-id]").forEach(el => {
+    const id = el.getAttribute("data-exam-id");
+    el.addEventListener("mouseenter", ev => showExamTooltip(ev, id));
+    el.addEventListener("mousemove", moveExamTooltip);
+    el.addEventListener("mouseleave", () => hideExamTooltip());
+    el.addEventListener("click", ev => {
+      ev.stopPropagation();
+      showExamTooltip(ev, id, true);
+    });
+  });
+}
+
+document.addEventListener("click", ev => {
+  if (!tooltipPinned) return;
+  const tip = document.getElementById("globalTooltip");
+  if (tip && !tip.contains(ev.target) && !ev.target.closest?.(".event-mini")) hideExamTooltip(true);
+});
 
 function examRow(e) {
   return `<div class="row session-row" title="${escapeHtml(examDetailsText(e))}">
@@ -530,7 +559,8 @@ function renderCalendar() {
       ${heads.map(h => `<div class="day-head">${h}</div>`).join("")}
       ${days.map(d => renderDay(d, month)).join("")}
     </div>
-  `, "Calendar", "Задачи и события сессии по датам");
+  `, "Calendar", "Задачи и события сессии по датам. Наведи на событие или нажми на него, чтобы увидеть детали.");
+  bindCalendarTooltips();
 }
 
 function renderDay(d, currentMonth) {
@@ -540,7 +570,7 @@ function renderDay(d, currentMonth) {
   return `<div class="day ${d.getMonth() !== currentMonth ? "out" : ""} ${key === todayISO() ? "today" : ""}">
     <div class="day-num">${d.getDate()}</div>
     <div class="day-events">
-      ${exams.map(e => `<div class="event-mini" title="${escapeHtml(examDetailsText(e))}" onmouseenter="showExamTooltip(event, '${escapeHtml(e.id)}')" onmousemove="moveExamTooltip(event)" onmouseleave="hideExamTooltip()"><span class="event-label">${formatTime(e.start)} ${escapeHtml(e.subject)}</span></div>`).join("")}
+      ${exams.map(e => `<div class="event-mini" data-exam-id="${escapeHtml(e.id)}" title="${escapeHtml(examDetailsText(e))}"><span class="event-label">${formatTime(e.start)} ${escapeHtml(e.subject)}</span></div>`).join("")}
       ${tasks.map(t => `<div class="event-mini task" title="${escapeHtml(t.title)}"><span class="event-label">✓ ${escapeHtml(t.title)}</span></div>`).join("")}
     </div>
   </div>`;

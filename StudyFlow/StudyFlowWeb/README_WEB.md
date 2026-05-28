@@ -61,3 +61,8 @@ Output Directory: .
 ## Calendar event layout fix
 
 Calendar event labels are clipped with ellipsis inside each day cell, so long subject names no longer overlap neighboring days. Full session details are shown in the hover tooltip, including time, teachers and room.
+
+
+## Calendar hover/click details
+
+В календаре события сессии показывают подробную карточку при наведении мыши. По клику карточка фиксируется, это удобно на тачпадах и сенсорных экранах.
