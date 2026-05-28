@@ -54,14 +54,14 @@ class AppScreenTest {
 
     @Test
     fun allAppScreensHaveUniqueIds() {
-        val screens = AppScreen.entries
+        val screens = AppScreen.values()
         val ids = screens.map { it.ordinal }
         assertEquals(ids.distinct().size, ids.size)
     }
 
     @Test
-    fun appScreenValuesContainsTenScreens() {
-        assertEquals(10, AppScreen.entries.size)
+    fun appScreenValuesContainsEightScreens() {
+        assertEquals(11, AppScreen.values().size)
     }
 
     @Test

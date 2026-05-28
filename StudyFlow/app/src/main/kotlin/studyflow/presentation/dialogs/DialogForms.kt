@@ -30,6 +30,7 @@ import studyflow.domain.model.Habit
 import studyflow.domain.model.Recurrence
 import studyflow.domain.model.TaskPriority
 import studyflow.domain.model.TaskStatus
+import studyflow.presentation.components.SubjectDropdownField
 import studyflow.util.DateUtils
 
 @Composable
@@ -66,8 +67,6 @@ fun TaskDialog(subjects: List<Subject>, initial: StudyTask?, onDismiss: () -> Un
     var recurrence by remember { mutableStateOf(initial?.recurrence ?: Recurrence.None) }
     var deadlineText by remember { mutableStateOf(initial?.deadlineAt?.let { DateUtils.formatIso(it) } ?: DateUtils.today().plusDays(3).toString()) }
     var estimate by remember { mutableStateOf(initial?.estimatedMinutes?.toString() ?: "60") }
-    var subjectQuery by remember { mutableStateOf("") }
-    val visibleSubjects = subjects.filter { subjectQuery.isBlank() || it.name.contains(subjectQuery, ignoreCase = true) }
     val deadlineAt = DateUtils.parseIsoDateToMillis(deadlineText)
     val deadlineInvalid = deadlineText.isNotBlank() && deadlineAt == null
 
@@ -76,21 +75,14 @@ fun TaskDialog(subjects: List<Subject>, initial: StudyTask?, onDismiss: () -> Un
         title = { Text(if (initial == null) "New task" else "Edit task") },
         text = {
             Column(Modifier.heightIn(max = 590.dp).verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                Text("Subject")
-                OutlinedTextField(subjectQuery, { subjectQuery = it }, label = { Text("Search subject") }, singleLine = true, modifier = Modifier.fillMaxWidth().testTag("task.subject.search"))
-                visibleSubjects.chunked(2).forEach { rowSubjects ->
-                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
-                        rowSubjects.forEach { s ->
-                            FilterChip(
-                                selected = selectedSubjectId == s.id,
-                                onClick = { selectedSubjectId = s.id },
-                                label = { Text(s.name.take(16)) },
-                                modifier = Modifier.weight(1f)
-                            )
-                        }
-                        if (rowSubjects.size == 1) Text("", modifier = Modifier.weight(1f))
-                    }
-                }
+                SubjectDropdownField(
+                    subjects = subjects,
+                    selectedSubjectId = selectedSubjectId,
+                    onSelected = { id -> if (id != null) selectedSubjectId = id },
+                    allowNone = false,
+                    label = "Subject",
+                    modifier = Modifier.fillMaxWidth().testTag("task.subject.selector")
+                )
                 OutlinedTextField(title, { title = it }, label = { Text("Title") }, modifier = Modifier.fillMaxWidth())
                 OutlinedTextField(description, { description = it }, label = { Text("Description") }, modifier = Modifier.fillMaxWidth())
                 Text("Status")
@@ -121,29 +113,20 @@ fun NoteDialog(subjects: List<Subject>, initial: Note?, onDismiss: () -> Unit, o
     var title by remember { mutableStateOf(initial?.title ?: "") }
     var content by remember { mutableStateOf(initial?.content ?: "") }
     var tags by remember { mutableStateOf(initial?.tags?.joinToString(", ") ?: "") }
-    var subjectQuery by remember { mutableStateOf("") }
-    val visibleSubjects = subjects.filter { subjectQuery.isBlank() || it.name.contains(subjectQuery, ignoreCase = true) }
     AlertDialog(
         onDismissRequest = onDismiss,
         title = { Text(if (initial == null) "New note" else "Edit note") },
         text = {
             Column(Modifier.heightIn(max = 560.dp).verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                Text("Subject")
-                FilterChip(selected = selectedSubjectId == null, onClick = { selectedSubjectId = null }, label = { Text("None") })
-                OutlinedTextField(subjectQuery, { subjectQuery = it }, label = { Text("Search subject") }, singleLine = true, modifier = Modifier.fillMaxWidth().testTag("note.subject.search"))
-                visibleSubjects.chunked(2).forEach { rowSubjects ->
-                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
-                        rowSubjects.forEach { s ->
-                            FilterChip(
-                                selected = selectedSubjectId == s.id,
-                                onClick = { selectedSubjectId = s.id },
-                                label = { Text(s.name.take(16)) },
-                                modifier = Modifier.weight(1f)
-                            )
-                        }
-                        if (rowSubjects.size == 1) Text("", modifier = Modifier.weight(1f))
-                    }
-                }
+                SubjectDropdownField(
+                    subjects = subjects,
+                    selectedSubjectId = selectedSubjectId,
+                    onSelected = { selectedSubjectId = it },
+                    allowNone = true,
+                    noneLabel = "No subject",
+                    label = "Subject",
+                    modifier = Modifier.fillMaxWidth().testTag("note.subject.selector")
+                )
                 OutlinedTextField(title, { title = it }, label = { Text("Title") }, modifier = Modifier.fillMaxWidth())
                 OutlinedTextField(content, { content = it }, label = { Text("Content") }, modifier = Modifier.fillMaxWidth(), minLines = 7)
                 OutlinedTextField(tags, { tags = it }, label = { Text("Tags separated by comma") }, modifier = Modifier.fillMaxWidth())

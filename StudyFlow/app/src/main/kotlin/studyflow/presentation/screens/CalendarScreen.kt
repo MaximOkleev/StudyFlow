@@ -31,6 +31,7 @@ import studyflow.data.StudyRepository
 import studyflow.domain.model.StudyTask
 import studyflow.domain.model.TaskStatus
 import studyflow.presentation.components.EmptyState
+import studyflow.presentation.components.ExamCard
 import studyflow.presentation.components.ScreenScaffold
 import studyflow.presentation.components.TaskCard
 import studyflow.presentation.dialogs.ConfirmDialog
@@ -46,6 +47,7 @@ fun CalendarScreen(repository: StudyRepository) {
     var editing by remember { mutableStateOf<StudyTask?>(null) }
     var pendingDelete by remember { mutableStateOf<StudyTask?>(null) }
     val selectedTasks = repository.tasks.filter { it.deadlineAt != null && DateUtils.millisToDate(it.deadlineAt) == selected }
+    val selectedExams = repository.examsOnDate(DateUtils.dateToMillis(selected))
     ScreenScaffold(
         title = "Calendar",
         subtitle = "Month view for task deadlines.",
@@ -71,7 +73,10 @@ fun CalendarScreen(repository: StudyRepository) {
             }
             Column(Modifier.weight(0.8f), verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 Text("${selected.dayOfMonth} ${selected.month}", color = Color.White, fontWeight = FontWeight.Bold)
-                if (selectedTasks.isEmpty()) EmptyState("No deadlines on selected date.") else LazyColumn(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                if (selectedTasks.isEmpty() && selectedExams.isEmpty()) {
+                    EmptyState("No deadlines or exams on selected date.")
+                } else LazyColumn(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                    items(selectedExams) { exam -> ExamCard(exam) }
                     items(selectedTasks) { task -> TaskCard(task, repository.subjectName(task.subjectId), onCycleStatus = { repository.cycleTaskStatus(task.id) }, onEdit = { editing = task }, onDelete = { pendingDelete = task }) }
                 }
             }
@@ -88,6 +93,7 @@ private fun DayCell(date: LocalDate?, selected: LocalDate, repository: StudyRepo
         return
     }
     val count = repository.tasks.count { it.deadlineAt != null && DateUtils.millisToDate(it.deadlineAt) == date }
+    val examCount = repository.exams.count { DateUtils.millisToDate(it.startAt) == date }
     val overdueCount = repository.tasks.count { it.deadlineAt != null && DateUtils.millisToDate(it.deadlineAt) == date && DateUtils.isOverdue(it.deadlineAt) && it.status != TaskStatus.Done }
     val isSelected = date == selected
     val isToday = date == DateUtils.today()
@@ -96,6 +102,7 @@ private fun DayCell(date: LocalDate?, selected: LocalDate, repository: StudyRepo
     ) {
         Column {
             Text(date.dayOfMonth.toString(), color = if (isToday) Color(0xFF22D3EE) else Color.White, fontWeight = FontWeight.Bold)
+            if (examCount > 0) Text("$examCount exams", color = Color(0xFFF97316), fontWeight = FontWeight.Bold)
             if (count > 0) Text("$count tasks", color = if (overdueCount > 0) Color(0xFFF87171) else Color(0xFFB9C0D4))
         }
     }

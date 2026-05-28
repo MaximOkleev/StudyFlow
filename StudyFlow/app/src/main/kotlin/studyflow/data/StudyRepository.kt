@@ -3,6 +3,7 @@ package studyflow.data
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
+import studyflow.domain.model.Exam
 import studyflow.domain.model.FocusSession
 import studyflow.domain.model.Habit
 import studyflow.domain.model.Note
@@ -18,7 +19,10 @@ import java.nio.file.Path
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 
-class StudyRepository(private val store: LocalStore = LocalStore()) {
+class StudyRepository(
+    private val store: LocalStore = LocalStore(),
+    private val seedOnFirstRun: Boolean = true
+) {
     var subjects by mutableStateOf<List<Subject>>(emptyList())
         private set
     var tasks by mutableStateOf<List<StudyTask>>(emptyList())
@@ -29,6 +33,8 @@ class StudyRepository(private val store: LocalStore = LocalStore()) {
         private set
     var habits by mutableStateOf<List<Habit>>(emptyList())
         private set
+    var exams by mutableStateOf<List<Exam>>(emptyList())
+        private set
     var lastMessage by mutableStateOf("SQLite database: ${store.dataDir.resolve("studyflow.sqlite")}")
         private set
 
@@ -37,29 +43,34 @@ class StudyRepository(private val store: LocalStore = LocalStore()) {
     private var nextNoteId = 1L
     private var nextSessionId = 1L
     private var nextHabitId = 1L
+    private var nextExamId = 1L
 
     init {
         val snapshot = store.load()
-        if (snapshot == null || snapshot.subjects.isEmpty()) {
-            subjects = SeedData.subjects()
-            tasks = SeedData.tasks()
-            notes = SeedData.notes()
-            focusSessions = SeedData.focusSessions()
-            habits = SeedData.habits()
-            save("Demo data created")
+        if (snapshot == null) {
+            subjects = if (seedOnFirstRun) SeedData.subjects() else emptyList()
+            tasks = emptyList()
+            notes = emptyList()
+            focusSessions = emptyList()
+            habits = emptyList()
+            exams = if (subjects.isEmpty()) emptyList() else SeedData.exams(subjects)
+            save(if (subjects.isEmpty()) "Clean workspace created. Add your first subject to start." else "Semester subjects and session schedule loaded. Add your own tasks when ready.")
         } else {
             subjects = snapshot.subjects
             tasks = snapshot.tasks
             notes = snapshot.notes
             focusSessions = snapshot.sessions
             habits = snapshot.habits
+            exams = snapshot.exams
         }
         recalcIds()
     }
 
     fun subjectById(id: Long): Subject? = subjects.firstOrNull { it.id == id }
     fun taskById(id: Long): StudyTask? = tasks.firstOrNull { it.id == id }
-    // habitById removed as it was unused
+    fun habitById(id: Long): Habit? = habits.firstOrNull { it.id == id }
+    fun examById(id: Long): Exam? = exams.firstOrNull { it.id == id }
+    fun examsForSubject(subjectId: Long): List<Exam> = exams.filter { it.subjectId == subjectId }
     fun tasksForSubject(subjectId: Long): List<StudyTask> = tasks.filter { it.subjectId == subjectId }
     fun notesForSubject(subjectId: Long): List<Note> = notes.filter { it.subjectId == subjectId }
     fun subjectName(id: Long?): String = id?.let { subjectById(it)?.name } ?: "No subject"
@@ -80,6 +91,7 @@ class StudyRepository(private val store: LocalStore = LocalStore()) {
         tasks = tasks.filterNot { it.subjectId == id }
         notes = notes.map { if (it.subjectId == id) it.copy(subjectId = null) else it }
         focusSessions = focusSessions.map { if (it.subjectId == id) it.copy(subjectId = null, taskId = null) else it }
+        exams = exams.map { if (it.subjectId == id) it.copy(subjectId = null) else it }
         save("Subject deleted")
     }
 
@@ -243,16 +255,50 @@ class StudyRepository(private val store: LocalStore = LocalStore()) {
         return streak
     }
 
-    fun resetDemoData() {
+    fun clearAllData() {
         store.reset()
-        subjects = SeedData.subjects()
-        tasks = SeedData.tasks()
-        notes = SeedData.notes()
-        focusSessions = SeedData.focusSessions()
-        habits = SeedData.habits()
+        subjects = emptyList()
+        tasks = emptyList()
+        notes = emptyList()
+        focusSessions = emptyList()
+        habits = emptyList()
+        exams = emptyList()
         recalcIds()
-        save("Demo data reset")
+        save("All local data cleared")
     }
+
+    fun resetDemoData() = clearAllData()
+
+    fun loadSemesterSubjects(): Int {
+        val existingNames = subjects.map { it.name.lowercase() }.toSet()
+        val toAdd = SeedData.subjects().filter { it.name.lowercase() !in existingNames }
+        if (toAdd.isEmpty()) {
+            lastMessage = "Semester subjects are already loaded. SQLite database: ${store.dataDir.resolve("studyflow.sqlite")}"
+            return 0
+        }
+        var nextId = nextSubjectId
+        subjects = subjects + toAdd.map { it.copy(id = nextId++) }
+        save("Loaded ${toAdd.size} semester subjects")
+        return toAdd.size
+    }
+
+    fun loadExamSchedule(): Int {
+        if (subjects.isEmpty()) loadSemesterSubjects()
+        var nextId = 1L
+        val loaded = SeedData.exams(subjects).map { seed ->
+            val linkedSubject = subjects.firstOrNull { it.name.equals(seed.subjectName, ignoreCase = true) }
+            seed.copy(id = nextId++, subjectId = linkedSubject?.id ?: seed.subjectId, type = "", location = "")
+        }
+        exams = loaded
+        save("Loaded ${loaded.size} session events")
+        return loaded.size
+    }
+
+    fun examsOnDate(dateMillis: Long): List<Exam> = exams.filter { DateUtils.millisToDate(it.startAt) == DateUtils.millisToDate(dateMillis) }.sortedBy { it.startAt }
+
+    fun upcomingExams(limit: Int = 6): List<Exam> = exams.filter { it.endAt >= DateUtils.nowMillis() }.sortedBy { it.startAt }.take(limit)
+
+    fun nextExam(): Exam? = upcomingExams(1).firstOrNull()
 
     fun saveNow() = save("Saved")
 
@@ -278,6 +324,32 @@ class StudyRepository(private val store: LocalStore = LocalStore()) {
         val list = tasksForSubject(subjectId)
         if (list.isEmpty()) return 0f
         return list.count { it.status == TaskStatus.Done }.toFloat() / list.size
+    }
+
+    fun exportSubjectsCsv(): Path {
+        val path = stampedPath("subjects_export", "csv")
+        val text = buildString {
+            appendLine("id,name,description,color_hex,icon")
+            subjects.forEach { s ->
+                appendLine(listOf(s.id, s.name, s.description, s.colorHex, s.icon).joinToString(",") { csv(it.toString()) })
+            }
+        }
+        Files.writeString(path, text)
+        lastMessage = "Exported: $path"
+        return path
+    }
+
+    fun exportExamsCsv(): Path {
+        val path = stampedPath("session_schedule_export", "csv")
+        val text = buildString {
+            appendLine("id,subject,start,end,teachers")
+            exams.sortedBy { it.startAt }.forEach { e ->
+                appendLine(listOf(e.id, e.subjectName, DateUtils.formatExamDateTime(e.startAt), DateUtils.formatExamDateTime(e.endAt), e.teachers).joinToString(",") { csv(it.toString()) })
+            }
+        }
+        Files.writeString(path, text)
+        lastMessage = "Exported: $path"
+        return path
     }
 
     fun exportTasksCsv(): Path {
@@ -335,6 +407,8 @@ class StudyRepository(private val store: LocalStore = LocalStore()) {
             habits.forEach { appendLine("HABIT | ${it.id} | ${it.name} | streak=${habitStreak(it)}") }
             appendLine("\nFocus sessions: ${focusSessions.size}")
             focusSessions.forEach { appendLine("FOCUS | ${it.id} | ${it.durationMinutes} minutes | ${subjectName(it.subjectId)}") }
+            appendLine("\nSession events: ${exams.size}")
+            exams.forEach { appendLine("SESSION | ${it.id} | ${it.subjectName} | ${DateUtils.formatTimeRange(it.startAt, it.endAt)} | ${it.teachers}") }
         }
         Files.writeString(path, text)
         lastMessage = "Backup exported: $path"
@@ -342,7 +416,7 @@ class StudyRepository(private val store: LocalStore = LocalStore()) {
     }
 
     fun exportRawBackup(): Path {
-        store.save(subjects, tasks, notes, focusSessions, habits)
+        store.save(subjects, tasks, notes, focusSessions, habits, exams)
         val path = store.exportRawBackup()
         lastMessage = "SQLite backup exported: $path"
         return path
@@ -351,7 +425,7 @@ class StudyRepository(private val store: LocalStore = LocalStore()) {
     fun restoreRawBackup(): Boolean {
         val restored = store.importRawBackup()
         if (!restored) {
-            lastMessage = "No restorable backup found"
+            lastMessage = "No SQLite backup found. Export one first."
             return false
         }
         val snapshot = store.load()
@@ -364,9 +438,36 @@ class StudyRepository(private val store: LocalStore = LocalStore()) {
         notes = snapshot.notes
         focusSessions = snapshot.sessions
         habits = snapshot.habits
+        exams = snapshot.exams
         recalcIds()
-        lastMessage = "Restored from raw backup"
+        lastMessage = "Restored from SQLite backup. Data folder: ${store.dataDir}"
         return true
+    }
+
+    fun importSubjectsCsv(pathText: String): Int {
+        val path = Path.of(pathText.trim().trim('"'))
+        if (!Files.exists(path)) {
+            lastMessage = "Subjects CSV import failed: file not found"
+            return 0
+        }
+        val lines = Files.readAllLines(path).dropWhile { it.isBlank() }
+        if (lines.isEmpty()) return 0
+        var imported = 0
+        val existingNames = subjects.map { it.name.lowercase() }.toMutableSet()
+        lines.drop(1).forEach { line ->
+            val cells = parseCsvLine(line)
+            val name = cells.getOrNull(1).orEmpty().ifBlank { cells.getOrNull(0).orEmpty() }.trim()
+            if (name.isNotBlank() && name.lowercase() !in existingNames) {
+                val description = cells.getOrNull(2).orEmpty()
+                val colorHex = cells.getOrNull(3).orEmpty().ifBlank { "#3B82F6" }
+                val icon = cells.getOrNull(4).orEmpty().ifBlank { "•" }
+                subjects = subjects + Subject(nextSubjectId++, name, description, safeColorHex(colorHex), icon, DateUtils.nowMillis())
+                existingNames += name.lowercase()
+                imported++
+            }
+        }
+        save("Imported $imported subjects from CSV")
+        return imported
     }
 
     fun importTasksCsv(pathText: String): Int {
@@ -386,7 +487,7 @@ class StudyRepository(private val store: LocalStore = LocalStore()) {
                 val title = cells.getOrNull(2).orEmpty().ifBlank { cells.getOrNull(0).orEmpty() }
                 if (title.isNotBlank()) {
                     val priority = enumByTitleOrName(cells.getOrNull(4), TaskPriority.Medium)
-                    val deadline = cells.getOrNull(5)?.takeIf { it.isNotBlank() }?.let { runCatching { DateUtils.parseIsoDateToMillis(it) }.getOrNull() }
+                    val deadline = cells.getOrNull(5)?.takeIf { it.isNotBlank() }?.let { runCatching { DateUtils.parseIsoDateToMillis(it) }.getOrNull() }?.let { it }
                     val recurrence = enumByTitleOrName(cells.getOrNull(8), Recurrence.None)
                     tasks = tasks + StudyTask(nextTaskId++, subjectId, title, cells.getOrNull(3).orEmpty(), TaskStatus.Todo, priority, deadline, cells.getOrNull(6)?.toIntOrNull(), 0, DateUtils.nowMillis(), null, recurrence)
                     imported++
@@ -451,7 +552,7 @@ class StudyRepository(private val store: LocalStore = LocalStore()) {
     private fun parseTags(text: String): List<String> = text.split(',', '#', ';').map { it.trim() }.filter { it.isNotEmpty() }.distinct()
 
     private fun save(message: String) {
-        store.save(subjects, tasks, notes, focusSessions, habits)
+        store.save(subjects, tasks, notes, focusSessions, habits, exams)
         lastMessage = "$message. SQLite database: ${store.dataDir.resolve("studyflow.sqlite")}"
         recalcIds()
     }
@@ -462,6 +563,7 @@ class StudyRepository(private val store: LocalStore = LocalStore()) {
         nextNoteId = (notes.maxOfOrNull { it.id } ?: 0L) + 1
         nextSessionId = (focusSessions.maxOfOrNull { it.id } ?: 0L) + 1
         nextHabitId = (habits.maxOfOrNull { it.id } ?: 0L) + 1
+        nextExamId = (exams.maxOfOrNull { it.id } ?: 0L) + 1
     }
 
     private fun csv(value: String): String = "\"${value.replace("\"", "\"\"")}\""

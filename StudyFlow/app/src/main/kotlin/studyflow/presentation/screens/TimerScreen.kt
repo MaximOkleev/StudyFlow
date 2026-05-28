@@ -36,6 +36,8 @@ import androidx.compose.ui.unit.sp
 import kotlinx.coroutines.delay
 import studyflow.data.StudyRepository
 import studyflow.presentation.components.ScreenScaffold
+import studyflow.presentation.components.SubjectDropdownField
+import studyflow.presentation.components.TaskDropdownField
 import studyflow.domain.model.TaskStatus
 import studyflow.system.DesktopNotifier
 
@@ -114,21 +116,28 @@ fun TimerScreen(repository: StudyRepository) {
                     finishMessage?.let { Text(it, color = Color(0xFF10B981)) }
                 }
             }
-            Text("Subject", color = Color.White)
-            repository.subjects.chunked(4).forEach { rowSubjects ->
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
-                    rowSubjects.forEach { s -> FilterChip(selected = selectedSubjectId == s.id, onClick = { selectedSubjectId = s.id }, label = { Text(s.name.take(16)) }, modifier = Modifier.weight(1f)) }
-                    repeat(4 - rowSubjects.size) { Spacer(Modifier.weight(1f)) }
-                }
-            }
-            Text("Task", color = Color.White)
+            SubjectDropdownField(
+                subjects = repository.subjects,
+                selectedSubjectId = selectedSubjectId,
+                onSelected = { selectedSubjectId = it },
+                allowNone = true,
+                noneLabel = "No subject",
+                label = "Subject",
+                modifier = Modifier.fillMaxWidth(0.9f).testTag("timer.subject.selector")
+            )
             val activeTasks = repository.tasks.filter { it.status != TaskStatus.Done }
-            activeTasks.chunked(3).forEach { rowTasks ->
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
-                    rowTasks.forEach { t -> FilterChip(selected = selectedTaskId == t.id, onClick = { selectedTaskId = t.id; selectedSubjectId = t.subjectId }, label = { Text(t.title.take(18)) }, modifier = Modifier.weight(1f)) }
-                    repeat(3 - rowTasks.size) { Spacer(Modifier.weight(1f)) }
-                }
-            }
+            TaskDropdownField(
+                tasks = activeTasks,
+                selectedTaskId = selectedTaskId,
+                onSelected = { id ->
+                    selectedTaskId = id
+                    id?.let { tid -> activeTasks.firstOrNull { it.id == tid }?.let { selectedSubjectId = it.subjectId } }
+                },
+                allowNone = true,
+                noneLabel = "No task",
+                label = "Task",
+                modifier = Modifier.fillMaxWidth(0.9f).testTag("timer.task.selector")
+            )
             Spacer(Modifier.height(10.dp))
             Text("Logged total: ${repository.totalFocusMinutes()} minutes", color = Color(0xFF9CA3AF))
         }

@@ -15,6 +15,7 @@ import studyflow.presentation.components.Sidebar
 import studyflow.presentation.screens.BoardScreen
 import studyflow.presentation.screens.CalendarScreen
 import studyflow.presentation.screens.DashboardScreen
+import studyflow.presentation.screens.ExamSessionScreen
 import studyflow.presentation.screens.HabitsScreen
 import studyflow.presentation.screens.NotesScreen
 import studyflow.presentation.screens.SettingsScreen
@@ -29,6 +30,7 @@ enum class AppScreen(val title: String, val shortTitle: String) {
     Subjects("Subjects", "Subjects"),
     Tasks("Tasks", "Tasks"),
     Calendar("Calendar", "Calendar"),
+    Session("Session Schedule", "Session"),
     Board("Kanban Board", "Board"),
     Habits("Habits", "Habits"),
     Notes("Notes", "Notes"),
@@ -54,6 +56,7 @@ fun StudyFlowApp(compact: Boolean = false) {
                     AppScreen.Subjects -> SubjectsScreen(repository)
                     AppScreen.Tasks -> TasksScreen(repository)
                     AppScreen.Calendar -> CalendarScreen(repository)
+                    AppScreen.Session -> ExamSessionScreen(repository)
                     AppScreen.Board -> BoardScreen(repository)
                     AppScreen.Habits -> HabitsScreen(repository)
                     AppScreen.Notes -> NotesScreen(repository)

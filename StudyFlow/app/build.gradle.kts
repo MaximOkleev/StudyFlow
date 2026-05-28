@@ -1,5 +1,6 @@
 import org.jetbrains.compose.desktop.application.dsl.TargetFormat
 import org.gradle.api.tasks.testing.Test
+import org.gradle.api.tasks.JavaExec
 
 plugins {
     alias(libs.plugins.kotlin.jvm)
@@ -9,7 +10,9 @@ plugins {
 }
 
 group = "dev.studyflow"
-version = "1.1.0"
+version = "1.1.2"
+
+val nativeAccessJvmArgs = listOf("--enable-native-access=ALL-UNNAMED")
 
 kotlin {
     jvmToolchain(17)
@@ -30,14 +33,21 @@ tasks.withType<Test>().configureEach {
     useJUnitPlatform()
 }
 
+// Compose Desktop/Skiko loads native libraries. Newer JDKs print a restricted-native-access
+// warning unless native access is explicitly enabled for unnamed modules.
+tasks.withType<JavaExec>().configureEach {
+    jvmArgs(nativeAccessJvmArgs)
+}
+
 compose.desktop {
     application {
         mainClass = "studyflow.MainKt"
+        jvmArgs += nativeAccessJvmArgs
 
         nativeDistributions {
             targetFormats(TargetFormat.Dmg, TargetFormat.Msi, TargetFormat.Deb)
             packageName = "StudyFlow"
-            packageVersion = "1.1.0"
+            packageVersion = "1.1.2"
             description = "Desktop study planner with tasks, notes, focus timer and statistics."
             copyright = "2026 StudyFlow"
         }

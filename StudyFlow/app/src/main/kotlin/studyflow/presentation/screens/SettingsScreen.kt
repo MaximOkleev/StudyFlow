@@ -28,10 +28,11 @@ import studyflow.presentation.dialogs.ConfirmDialog
 
 @Composable
 fun SettingsScreen(repository: StudyRepository) {
-    var confirmReset by remember { mutableStateOf(false) }
+    var confirmClear by remember { mutableStateOf(false) }
     var confirmRestore by remember { mutableStateOf(false) }
     var csvImportPath by remember { mutableStateOf("") }
     var mdImportPath by remember { mutableStateOf("") }
+    var subjectImportPath by remember { mutableStateOf("") }
 
     ScreenScaffold(title = "Settings", subtitle = "Local storage, export and project maintenance.") {
         Column(verticalArrangement = Arrangement.spacedBy(16.dp), modifier = Modifier.verticalScroll(rememberScrollState())) {
@@ -41,7 +42,9 @@ fun SettingsScreen(repository: StudyRepository) {
                     Text(repository.lastMessage, color = Color(0xFF9CA3AF))
                     Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                         Button(onClick = { repository.saveNow() }) { Text("Save now") }
-                        OutlinedButton(onClick = { confirmReset = true }) { Text("Reset demo data") }
+                        Button(onClick = { repository.loadSemesterSubjects() }, modifier = Modifier.testTag("settings.load.semester.subjects")) { Text("Load semester subjects") }
+                        Button(onClick = { repository.loadExamSchedule() }, modifier = Modifier.testTag("settings.load.exam.schedule")) { Text("Load session schedule") }
+                        OutlinedButton(onClick = { confirmClear = true }, modifier = Modifier.testTag("settings.clear.all")) { Text("Clear all data") }
                     }
                 }
             }
@@ -50,6 +53,8 @@ fun SettingsScreen(repository: StudyRepository) {
                     Text("Export", color = Color.White)
                     Text("Files are written to the local StudyFlow data folder.", color = Color(0xFF9CA3AF))
                     Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                        Button(onClick = { repository.exportSubjectsCsv() }) { Text("Subjects CSV") }
+                        Button(onClick = { repository.exportExamsCsv() }) { Text("Events CSV") }
                         Button(onClick = { repository.exportTasksCsv() }) { Text("Tasks CSV") }
                         Button(onClick = { repository.exportNotesMarkdown() }) { Text("Notes Markdown") }
                         Button(onClick = { repository.exportHabitsCsv() }) { Text("Habits CSV") }
@@ -62,6 +67,8 @@ fun SettingsScreen(repository: StudyRepository) {
                 Column(Modifier.padding(18.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
                     Text("Import", color = Color.White)
                     Text("Paste an absolute path to a CSV/Markdown file, then import it into the SQLite database.", color = Color(0xFF9CA3AF))
+                    OutlinedTextField(subjectImportPath, { subjectImportPath = it }, label = { Text("Subjects CSV path") }, singleLine = true, modifier = Modifier.fillMaxWidth())
+                    Button(onClick = { repository.importSubjectsCsv(subjectImportPath) }) { Text("Import subjects CSV") }
                     OutlinedTextField(csvImportPath, { csvImportPath = it }, label = { Text("Tasks CSV path") }, singleLine = true, modifier = Modifier.fillMaxWidth())
                     Button(onClick = { repository.importTasksCsv(csvImportPath) }) { Text("Import tasks CSV") }
                     OutlinedTextField(mdImportPath, { mdImportPath = it }, label = { Text("Notes Markdown path") }, singleLine = true, modifier = Modifier.fillMaxWidth())
@@ -82,13 +89,13 @@ fun SettingsScreen(repository: StudyRepository) {
         }
     }
 
-    if (confirmReset) {
+    if (confirmClear) {
         ConfirmDialog(
-            title = "Reset demo data?",
-            text = "This will replace current local subjects, tasks, notes, habits and focus sessions with demo data.",
-            confirmText = "Reset",
-            onConfirm = { repository.resetDemoData() },
-            onDismiss = { confirmReset = false }
+            title = "Clear all data?",
+            text = "This will delete all local subjects, tasks, notes, habits, session schedule and focus sessions. The app will stay empty so you can add everything manually.",
+            confirmText = "Clear",
+            onConfirm = { repository.clearAllData() },
+            onDismiss = { confirmClear = false }
         )
     }
 

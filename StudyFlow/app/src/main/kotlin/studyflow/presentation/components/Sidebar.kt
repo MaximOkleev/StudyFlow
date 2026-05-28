@@ -74,6 +74,7 @@ private fun iconFor(screen: AppScreen): String = when (screen) {
     AppScreen.Subjects -> "▦"
     AppScreen.Tasks -> "✓"
     AppScreen.Calendar -> "◷"
+    AppScreen.Session -> "⚑"
     AppScreen.Board -> "▤"
     AppScreen.Habits -> "◆"
     AppScreen.Notes -> "✎"

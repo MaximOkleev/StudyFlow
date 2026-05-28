@@ -12,7 +12,7 @@ class StudyRepositoryAllMethodsTest {
     private fun createRepository(): StudyRepository {
         val dir = Files.createTempDirectory("studyflow-all-methods-test")
         val store = LocalStore(dir)
-        return StudyRepository(store)
+        return StudyRepository(store, seedOnFirstRun = false)
     }
 
     @Test
@@ -116,8 +116,9 @@ class StudyRepositoryAllMethodsTest {
         assertNotNull(repo.subjectById(subject.id))
         assertNotNull(repo.taskById(task.id))
 
-        repo.resetDemoData()
-        assertTrue(repo.subjects.isNotEmpty())
+        repo.clearAllData()
+        assertTrue(repo.subjects.isEmpty())
+        assertTrue(repo.tasks.isEmpty())
 
         repo.saveNow()
 

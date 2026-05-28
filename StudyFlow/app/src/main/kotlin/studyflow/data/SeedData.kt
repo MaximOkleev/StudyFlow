@@ -1,49 +1,94 @@
 package studyflow.data
 
+import studyflow.domain.model.Exam
 import studyflow.domain.model.FocusSession
 import studyflow.domain.model.Habit
 import studyflow.domain.model.Note
 import studyflow.domain.model.Subject
 import studyflow.domain.model.StudyTask
-import studyflow.domain.model.TaskPriority
-import studyflow.domain.model.TaskStatus
 import studyflow.util.DateUtils
+import java.time.LocalDateTime
 
+/**
+ * Starter curriculum data for the current semester.
+ *
+ * The app still starts without tasks, notes, habits and focus sessions. Only
+ * subjects are preloaded so the user can immediately create their own tasks.
+ */
 object SeedData {
-    fun subjects() = listOf(
-        Subject(1, "Mathematics", "Algebra, functions, logarithms and exam practice.", "#7C3AED", "∑", DateUtils.nowMillis()),
-        Subject(2, "Physics", "Mechanics, electricity, formula sheets and variants.", "#0EA5E9", "⚛", DateUtils.nowMillis()),
-        Subject(3, "Programming", "Kotlin, C++, algorithms and summer projects.", "#10B981", "</>", DateUtils.nowMillis()),
-        Subject(4, "Russian", "Essays, grammar, arguments and exam tasks.", "#F97316", "А", DateUtils.nowMillis()),
-        Subject(5, "English", "Vocabulary, listening and weekly speaking practice.", "#EC4899", "EN", DateUtils.nowMillis())
-    )
+    fun subjects(): List<Subject> {
+        val now = DateUtils.nowMillis()
+        return listOf(
+            subject(1, "Основы профессиональной коммуникации на иностранном языке", "Код: Б1-ГМ.В.ДВ.2.1 • Аттестация: Атт/Экз • Всего: 30 ч • Практика: 30 ч", "EN", "#60A5FA", now),
+            subject(2, "Практикум по культуре речевого общения на иностранном языке", "Код: Б1-ГМ.В.ДВ.2.2 • Аттестация: Атт/Экз • Всего: 30 ч • Практика: 30 ч • Профессиональный контекст", "EN", "#38BDF8", now),
+            subject(3, "Безопасность жизнедеятельности", "Код: Б1-ОПМ.Б.2 • Аттестация: Зач • Всего: 60 ч • Лекции: 45 ч • Практика: 15 ч", "БЖ", "#F97316", now),
+            subject(4, "Теория игр", "Код: Б1-ОПМ.Б.7 • Аттестация: Атт/Экз • Всего: 45 ч • Лекции: 30 ч • Лабы: 15 ч", "ТИ", "#A78BFA", now),
+            subject(5, "Математические модели физических процессов", "Код: Б1-ОПМ.Б.15 • Аттестация: Атт/Экз • Всего: 60 ч • Лекции: 15 ч • Практика: 15 ч • Лабы: 30 ч", "МФ", "#22C55E", now),
+            subject(6, "Анализ систем массового обслуживания", "Код: Б1-ОПМ.Б.17 • Аттестация: Атт/Экз • Всего: 45 ч • Лекции: 30 ч • Лабы: 15 ч", "СМ", "#F43F5E", now),
+            subject(7, "Численные методы (дополнительные главы)", "Код: Б1-ОПМ.Б.18 • Аттестация: Атт/Экз • Всего: 45 ч • Лекции: 15 ч • Практика: 15 ч • Лабы: 15 ч", "ЧМ", "#14B8A6", now),
+            subject(8, "Основы WEB-программирования", "Код: Б1-ОПМ.В.ДВ.2.1 • Аттестация: З/О • Всего: 60 ч • Лекции: 15 ч • Практика: 15 ч • Лабы: 30 ч", "WEB", "#3B82F6", now),
+            subject(9, "Теория нелинейных систем регулирования", "Код: Б1-ОПМ.В.ДВ.2.2 • Аттестация: З/О • Всего: 60 ч • Лекции: 15 ч • Практика: 15 ч • Лабы: 30 ч", "НР", "#8B5CF6", now),
+            subject(10, "Введение в теорию нейронных сетей", "Код: Б1-ПМ.В.ОД.5 • Аттестация: Зач • Всего: 75 ч • Лекции: 30 ч • Практика: 30 ч • Лабы: 15 ч", "NN", "#EC4899", now),
+            subject(11, "Математическое моделирование", "Код: Б1-ПМ.В.ДВ.1.1 • Аттестация: Зач • Всего: 60 ч • Лекции: 15 ч • Практика: 15 ч • Лабы: 30 ч", "ММ", "#10B981", now),
+            subject(12, "Математические модели динамических систем", "Код: Б1-ПМ.В.ДВ.1.2 • Аттестация: Зач • Всего: 60 ч • Лекции: 15 ч • Практика: 15 ч • Лабы: 30 ч", "ДС", "#06B6D4", now),
+            subject(13, "Производственная практика: МО ядерно-энергетических систем", "Код: Б2-РП.В.ДВ.1.1 • Аттестация: З/О • Всего: 32 ч • Лабы: 32 ч", "ПР", "#84CC16", now),
+            subject(14, "Производственная практика: МО информационных систем", "Код: Б2-РП.В.ДВ.1.2 • Аттестация: З/О • Всего: 32 ч • Лабы: 32 ч", "ПР", "#65A30D", now),
+            subject(15, "Производственная практика: МО сложных технических систем", "Код: Б2-РП.В.ДВ.1.3 • Аттестация: З/О • Всего: 32 ч • Лабы: 32 ч", "ПР", "#15803D", now),
+            subject(16, "ФК Основы военной подготовки", "Код: ФТД.1 • Аттестация: Зач • Всего: 25 ч • Практика: 25 ч", "ОВ", "#64748B", now),
+            subject(17, "ФК Психология лидерства", "Код: ФТД.2 • Аттестация: Зач • Всего: 30 ч • Практика: 30 ч", "ПЛ", "#F59E0B", now),
+            subject(18, "ФК Программирование на Rust", "Код: ФТД.5 • Аттестация: Зач • Всего: 68 ч • Лекции: 34 ч • Практика: 34 ч", "RS", "#EA580C", now),
+            subject(19, "ФК Военная подготовка", "Аттестация: уточнить • Всего: 90 ч • Лекции: 20 ч • Практика: 70 ч", "ВП", "#475569", now),
+            subject(20, "Физическая культура (элективная дисциплина)", "Код: Б1.В.ОД.1 • Аттестация: Атт • Всего: 54 ч • Практика: 54 ч", "ФК", "#16A34A", now)
+        )
+    }
 
-    fun tasks() = listOf(
-        StudyTask(1, 3, "Build StudyFlow UI", "Finish dashboard, tasks, notes, timer and statistics screens.", TaskStatus.InProgress, TaskPriority.High, DateUtils.daysFromNow(1), 180, 70, DateUtils.nowMillis(), null),
-        StudyTask(2, 2, "Solve physics variant", "Write formulas first, solve tasks, then mark weak topics.", TaskStatus.Todo, TaskPriority.High, DateUtils.daysFromNow(2), 100, 0, DateUtils.nowMillis(), null),
-        StudyTask(3, 1, "Repeat logarithm properties", "Make one compact formula sheet and solve 20 examples.", TaskStatus.Done, TaskPriority.Medium, DateUtils.daysFromNow(-1), 60, 75, DateUtils.nowMillis(), DateUtils.nowMillis()),
-        StudyTask(4, 4, "Write essay draft", "Use five paragraph structure and check examples.", TaskStatus.Todo, TaskPriority.Medium, DateUtils.daysFromNow(4), 80, 0, DateUtils.nowMillis(), null),
-        StudyTask(5, 3, "Start PixelMatter C++ project", "Set up raylib, grid simulation and first materials.", TaskStatus.InProgress, TaskPriority.High, DateUtils.daysFromNow(5), 240, 90, DateUtils.nowMillis(), null),
-        StudyTask(6, 5, "Learn 40 new words", "Add examples and repeat after one day.", TaskStatus.Todo, TaskPriority.Low, DateUtils.daysFromNow(0), 35, 10, DateUtils.nowMillis(), null)
-    )
 
-    fun notes() = listOf(
-        Note(1, 1, "Logarithm properties", "log(ab)=log(a)+log(b)\nlog(a/b)=log(a)-log(b)\nlog(a^n)=n log(a)", listOf("math", "formula"), DateUtils.nowMillis(), DateUtils.nowMillis()),
-        Note(2, 3, "Summer project rule", "Do not chase 20 features. First make a stable MVP, then make it beautiful.", listOf("project", "planning"), DateUtils.nowMillis(), DateUtils.nowMillis()),
-        Note(3, 2, "Physics solving order", "1. Write given values.\n2. Convert units.\n3. Draw scheme.\n4. Choose formula.\n5. Substitute numbers.", listOf("physics"), DateUtils.nowMillis(), DateUtils.nowMillis())
-    )
+    fun exams(subjects: List<Subject>): List<Exam> {
+        val now = DateUtils.nowMillis()
+        fun subjectId(name: String): Long? = subjects.firstOrNull { it.name.equals(name, ignoreCase = true) }?.id
+        fun event(id: Long, subjectName: String, month: Int, day: Int, startHour: Int, startMinute: Int, endHour: Int, endMinute: Int, teachers: String) = Exam(
+            id = id,
+            subjectId = subjectId(subjectName),
+            subjectName = subjectName,
+            type = "",
+            teachers = teachers,
+            startAt = DateUtils.dateTimeToMillis(LocalDateTime.of(2026, month, day, startHour, startMinute)),
+            endAt = DateUtils.dateTimeToMillis(LocalDateTime.of(2026, month, day, endHour, endMinute)),
+            location = "",
+            createdAt = now
+        )
 
-    fun focusSessions() = listOf(
-        FocusSession(1, 1, 3, DateUtils.daysFromNow(-3), 25),
-        FocusSession(2, 3, 1, DateUtils.daysFromNow(-2), 50),
-        FocusSession(3, 2, 2, DateUtils.daysFromNow(-1), 35),
-        FocusSession(4, 5, 3, DateUtils.nowMillis(), 45)
-    )
+        return listOf(
+            event(1, "Основы профессиональной коммуникации на иностранном языке", 5, 20, 14, 30, 16, 5, "Макарова А.А."),
+            event(2, "Численные методы (дополнительные главы)", 5, 23, 12, 45, 14, 20, "Саманчук В.Н."),
+            event(3, "Безопасность жизнедеятельности", 5, 23, 15, 20, 17, 50, "Сурц П.П."),
+            event(4, "Теория игр", 5, 25, 11, 55, 13, 30, "Колобашкина Л.В."),
+            event(5, "Теория нелинейных систем регулирования", 5, 25, 14, 30, 17, 0, "Ктиров С.В."),
+            event(6, "Анализ систем массового обслуживания", 5, 26, 10, 15, 11, 50, "Колобашкина Л.В."),
+            event(7, "Математические модели физических процессов", 5, 26, 12, 45, 14, 20, "Загребаев А.М."),
+            event(8, "Введение в теорию нейронных сетей", 5, 27, 16, 15, 17, 50, "Трофимов А.Г."),
+            event(9, "Основы WEB-программирования", 5, 28, 8, 30, 11, 0, "Букалин А.О."),
+            event(10, "Математическое моделирование", 5, 28, 11, 55, 14, 20, "Козин Р.Г."),
+            event(11, "ФК Психология лидерства", 5, 28, 17, 55, 19, 30, "Паршин И.А."),
+            event(12, "ФК Основы военной подготовки", 5, 29, 10, 15, 11, 50, ""),
+            event(13, "Физическая культура (элективная дисциплина)", 5, 29, 11, 55, 13, 30, ""),
+            event(14, "Производственная практика: МО информационных систем", 5, 29, 14, 30, 16, 5, "Козин Р.Г., Ктиров С.В., Рамазанов Р.Н., Загребаев А.М., Трифоненков А.В., Букалин А.О., Овсянников Н.В., Саманчук В.Н."),
+            event(15, "Производственная практика: МО сложных технических систем", 5, 29, 14, 30, 16, 5, "Саманчук В.Н., Овсянников Н.В., Букалин А.О., Загребаев А.М., Козин Р.Г., Ктиров С.В., Рамазанов Р.Н., Трифоненков А.В."),
+            event(16, "Производственная практика: МО ядерно-энергетических систем", 5, 29, 14, 30, 16, 5, "Овсянников Н.В., Букалин А.О., Загребаев А.М., Козин Р.Г., Ктиров С.В., Рамазанов Р.Н., Саманчук В.Н., Трифоненков А.В."),
+            event(17, "ФК Программирование на Rust", 5, 29, 18, 45, 20, 20, "Чугунков И.В."),
+            event(18, "Основы профессиональной коммуникации на иностранном языке", 6, 5, 9, 0, 13, 0, "Борисова В.А., Игнатьева А.А., Журавлева Н.А."),
+            event(19, "Анализ систем массового обслуживания", 6, 10, 9, 0, 13, 0, "Колобашкина Л.В."),
+            event(20, "Теория игр", 6, 15, 9, 0, 13, 0, "Колобашкина Л.В."),
+            event(21, "Численные методы (дополнительные главы)", 6, 20, 9, 0, 13, 0, "Саманчук В.Н."),
+            event(22, "Математические модели физических процессов", 6, 25, 9, 0, 13, 0, "Загребаев А.М.")
+        )
+    }
 
-    fun habits() = listOf(
-        Habit(1, "Solve one variant", "Do at least one exam-style task set every day.", "#7C3AED", DateUtils.nowMillis(), completedDates = setOf(DateUtils.today().minusDays(2).toString(), DateUtils.today().minusDays(1).toString())),
-        Habit(2, "Read notes", "Repeat formulas or summaries for 10 minutes.", "#0EA5E9", DateUtils.nowMillis(), completedDates = setOf(DateUtils.today().minusDays(1).toString())),
-        Habit(3, "Focus block", "Complete one timer session without distractions.", "#10B981", DateUtils.nowMillis())
-    )
+    fun tasks(): List<StudyTask> = emptyList()
+    fun notes(): List<Note> = emptyList()
+    fun focusSessions(): List<FocusSession> = emptyList()
+    fun habits(): List<Habit> = emptyList()
 
+    private fun subject(id: Long, name: String, description: String, icon: String, colorHex: String, createdAt: Long) =
+        Subject(id = id, name = name, description = description, colorHex = colorHex, icon = icon, createdAt = createdAt)
 }

@@ -16,15 +16,28 @@ class StudyRepositoryTest {
     private fun createRepository(): StudyRepository {
         val dir = Files.createTempDirectory("studyflow-repo-test")
         val store = LocalStore(dir)
-        return StudyRepository(store)
+        return StudyRepository(store, seedOnFirstRun = false)
+    }
+
+    private fun createRepositoryWithSubject(): StudyRepository {
+        val repo = createRepository()
+        repo.addSubject("Physics", "Force and Motion", "#FF6B6B", "⚛")
+        return repo
+    }
+
+    private fun createRepositoryWithTask(): StudyRepository {
+        val repo = createRepositoryWithSubject()
+        val subject = repo.subjects.first()
+        repo.addTask(subject.id, "Study Task", "Learn basics", TaskPriority.High, null, 45)
+        return repo
     }
 
     @Test
-    fun repositoryInitializesWithDemoData() {
+    fun repositoryInitializesEmpty() {
         val repo = createRepository()
-        assertTrue(repo.subjects.isNotEmpty())
-        assertTrue(repo.tasks.isNotEmpty())
-        assertTrue(repo.notes.isNotEmpty())
+        assertTrue(repo.subjects.isEmpty())
+        assertTrue(repo.tasks.isEmpty())
+        assertTrue(repo.notes.isEmpty())
     }
 
     @Test
@@ -48,7 +61,7 @@ class StudyRepositoryTest {
 
     @Test
     fun canFindSubjectById() {
-        val repo = createRepository()
+        val repo = createRepositoryWithSubject()
         val subject = repo.subjects.first()
         val found = repo.subjectById(subject.id)
         assertEquals(subject, found)
@@ -56,7 +69,7 @@ class StudyRepositoryTest {
 
     @Test
     fun canUpdateSubject() {
-        val repo = createRepository()
+        val repo = createRepositoryWithSubject()
         val subject = repo.subjects.first()
         repo.updateSubject(subject, "Updated Name", "New Desc", "#00FF00", "U")
         val updated = repo.subjectById(subject.id)
@@ -67,7 +80,7 @@ class StudyRepositoryTest {
 
     @Test
     fun canDeleteSubject() {
-        val repo = createRepository()
+        val repo = createRepositoryWithSubject()
         val subject = repo.subjects.first()
         val initialCount = repo.subjects.size
         repo.deleteSubject(subject.id)
@@ -77,7 +90,7 @@ class StudyRepositoryTest {
 
     @Test
     fun canAddTaskToSubject() {
-        val repo = createRepository()
+        val repo = createRepositoryWithSubject()
         val subject = repo.subjects.first()
         val initialCount = repo.tasks.size
         repo.addTask(subject.id, "Study Task", "Learn basics", TaskPriority.High, null, 45)
@@ -94,7 +107,7 @@ class StudyRepositoryTest {
 
     @Test
     fun canCycleTaskStatus() {
-        val repo = createRepository()
+        val repo = createRepositoryWithTask()
         val task = repo.tasks.first()
         val originalStatus = task.status
         repo.cycleTaskStatus(task.id)
@@ -112,7 +125,7 @@ class StudyRepositoryTest {
 
     @Test
     fun canCalculateProgress() {
-        val repo = createRepository()
+        val repo = createRepositoryWithSubject()
         val subject = repo.subjects.first()
         val progress = repo.subjectProgress(subject.id)
         assertTrue(progress >= 0f && progress <= 1f)
@@ -120,7 +133,7 @@ class StudyRepositoryTest {
 
     @Test
     fun canAddSpentMinutes() {
-        val repo = createRepository()
+        val repo = createRepositoryWithTask()
         val task = repo.tasks.first()
         val initialSpent = task.spentMinutes
         repo.addSpentMinutes(task.id, 15)
@@ -131,7 +144,7 @@ class StudyRepositoryTest {
 
     @Test
     fun canLogFocusSession() {
-        val repo = createRepository()
+        val repo = createRepositoryWithSubject()
         val subject = repo.subjects.first()
         val initialCount = repo.focusSessions.size
         repo.logFocusSession(null, subject.id, 25)
@@ -149,7 +162,7 @@ class StudyRepositoryTest {
 
     @Test
     fun canGetSubjectName() {
-        val repo = createRepository()
+        val repo = createRepositoryWithSubject()
         val subject = repo.subjects.first()
         val name = repo.subjectName(subject.id)
         assertEquals(subject.name, name)

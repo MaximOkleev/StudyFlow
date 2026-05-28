@@ -15,7 +15,13 @@ class StudyRepositoryExportTest {
     private fun createRepository(): StudyRepository {
         val dir = Files.createTempDirectory("studyflow-export-test")
         val store = LocalStore(dir)
-        return StudyRepository(store)
+        val repo = StudyRepository(store, seedOnFirstRun = false)
+        repo.addSubject("Math", "Algebra", "#7C3AED", "M")
+        val subject = repo.subjects.first()
+        repo.addTask(subject.id, "Task", "Description", TaskPriority.Medium, null, 30)
+        repo.addNote(subject.id, "Note", "Content", "test")
+        repo.logFocusSession(repo.tasks.first().id, subject.id, 15)
+        return repo
     }
 
     @Test
@@ -93,7 +99,13 @@ class StudyRepositoryRestoreTest {
     private fun createRepository(): StudyRepository {
         val dir = Files.createTempDirectory("studyflow-restore-test")
         val store = LocalStore(dir)
-        return StudyRepository(store)
+        val repo = StudyRepository(store, seedOnFirstRun = false)
+        repo.addSubject("Math", "Algebra", "#7C3AED", "M")
+        val subject = repo.subjects.first()
+        repo.addTask(subject.id, "Task", "Description", TaskPriority.Medium, null, 30)
+        repo.addNote(subject.id, "Note", "Content", "test")
+        repo.logFocusSession(repo.tasks.first().id, subject.id, 15)
+        return repo
     }
 
     @Test
@@ -101,7 +113,7 @@ class StudyRepositoryRestoreTest {
         val repo = createRepository()
         val restored = repo.restoreRawBackup()
         assertFalse(restored)
-        assertTrue(repo.lastMessage.contains("No restorable backup found"))
+        assertTrue(repo.lastMessage.contains("No SQLite backup found"))
     }
 
     @Test
@@ -122,7 +134,7 @@ class StudyRepositoryRestoreTest {
         val repo = createRepository()
         repo.exportRawBackup()
         repo.restoreRawBackup()
-        assertTrue(repo.lastMessage.contains("Restored from raw backup"))
+        assertTrue(repo.lastMessage.contains("Restored from SQLite backup"))
     }
 }
 
@@ -130,7 +142,13 @@ class StudyRepositoryStatsTest {
     private fun createRepository(): StudyRepository {
         val dir = Files.createTempDirectory("studyflow-stats-test")
         val store = LocalStore(dir)
-        return StudyRepository(store)
+        val repo = StudyRepository(store, seedOnFirstRun = false)
+        repo.addSubject("Math", "Algebra", "#7C3AED", "M")
+        val subject = repo.subjects.first()
+        repo.addTask(subject.id, "Task", "Description", TaskPriority.Medium, null, 30)
+        repo.addNote(subject.id, "Note", "Content", "test")
+        repo.logFocusSession(repo.tasks.first().id, subject.id, 15)
+        return repo
     }
 
     @Test
@@ -203,7 +221,13 @@ class StudyRepositoryNotesTest {
     private fun createRepository(): StudyRepository {
         val dir = Files.createTempDirectory("studyflow-notes-test")
         val store = LocalStore(dir)
-        return StudyRepository(store)
+        val repo = StudyRepository(store, seedOnFirstRun = false)
+        repo.addSubject("Math", "Algebra", "#7C3AED", "M")
+        val subject = repo.subjects.first()
+        repo.addTask(subject.id, "Task", "Description", TaskPriority.Medium, null, 30)
+        repo.addNote(subject.id, "Note", "Content", "test")
+        repo.logFocusSession(repo.tasks.first().id, subject.id, 15)
+        return repo
     }
 
     @Test
@@ -258,7 +282,13 @@ class StudyRepositoryTaskDetailsTest {
     private fun createRepository(): StudyRepository {
         val dir = Files.createTempDirectory("studyflow-task-details-test")
         val store = LocalStore(dir)
-        return StudyRepository(store)
+        val repo = StudyRepository(store, seedOnFirstRun = false)
+        repo.addSubject("Math", "Algebra", "#7C3AED", "M")
+        val subject = repo.subjects.first()
+        repo.addTask(subject.id, "Task", "Description", TaskPriority.Medium, null, 30)
+        repo.addNote(subject.id, "Note", "Content", "test")
+        repo.logFocusSession(repo.tasks.first().id, subject.id, 15)
+        return repo
     }
 
     @Test

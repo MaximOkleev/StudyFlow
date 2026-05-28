@@ -29,6 +29,7 @@ import studyflow.domain.model.TaskStatus
 import studyflow.presentation.components.EmptyState
 import studyflow.presentation.components.ScreenScaffold
 import studyflow.presentation.components.TaskCard
+import studyflow.presentation.components.SubjectDropdownField
 import studyflow.presentation.dialogs.ConfirmDialog
 import studyflow.presentation.dialogs.TaskDialog
 
@@ -60,24 +61,25 @@ fun TasksScreen(repository: StudyRepository) {
                 TaskStatus.entries.forEach { status -> FilterChip(selected = statusFilter == status, onClick = { statusFilter = status }, label = { Text(status.title) }) }
                 OutlinedTextField(search, { search = it }, label = { Text("Search") }, singleLine = true, modifier = Modifier.weight(1f).padding(start = 12.dp).testTag("tasks.search"))
             }
-            (listOf<Long?>(null) + repository.subjects.map { it.id }).chunked(5).forEach { rowIds ->
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
-                    rowIds.forEach { id ->
-                        val subject = id?.let { sid -> repository.subjectById(sid) }
-                        FilterChip(
-                            selected = subjectFilter == id,
-                            onClick = { subjectFilter = id },
-                            label = { Text(subject?.name?.take(12) ?: "Any subject") }
-                        )
-                    }
-                }
-            }
+            SubjectDropdownField(
+                subjects = repository.subjects,
+                selectedSubjectId = subjectFilter,
+                onSelected = { subjectFilter = it },
+                allowNone = true,
+                noneLabel = "Any subject",
+                label = "Subject filter",
+                modifier = Modifier.fillMaxWidth().testTag("tasks.subject.filter")
+            )
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
                 FilterChip(selected = priorityFilter == null, onClick = { priorityFilter = null }, label = { Text("Any priority") })
                 TaskPriority.entries.forEach { priority -> FilterChip(selected = priorityFilter == priority, onClick = { priorityFilter = priority }, label = { Text(priority.title) }) }
             }
         }
-        if (tasks.isEmpty()) EmptyState("No tasks match the current filter.", "Create task") { showAdd = true } else LazyColumn(verticalArrangement = Arrangement.spacedBy(12.dp), modifier = Modifier.fillMaxSize()) {
+        if (repository.subjects.isEmpty()) {
+            EmptyState("No subjects yet. Create a subject first, then add tasks.", "Go to Subjects") {}
+        } else if (tasks.isEmpty()) {
+            EmptyState("No tasks match the current filter.", "Create task") { showAdd = true }
+        } else LazyColumn(verticalArrangement = Arrangement.spacedBy(12.dp), modifier = Modifier.fillMaxSize()) {
             items(tasks) { task ->
                 TaskCard(task, repository.subjectName(task.subjectId), onCycleStatus = { repository.cycleTaskStatus(task.id) }, onEdit = { editing = task }, onDelete = { pendingDelete = task })
             }

@@ -1,5 +1,6 @@
 package studyflow.data
 
+import studyflow.domain.model.Exam
 import studyflow.domain.model.FocusSession
 import studyflow.domain.model.Habit
 import studyflow.domain.model.Note
@@ -40,7 +41,8 @@ class LocalStore(
         tasks: List<StudyTask>,
         notes: List<Note>,
         sessions: List<FocusSession>,
-        habits: List<Habit> = emptyList()
+        habits: List<Habit> = emptyList(),
+        exams: List<Exam> = emptyList()
     ) {
         withConnection(dbFile) { c ->
             createSchema(c)
@@ -49,6 +51,7 @@ class LocalStore(
                 c.createStatement().use { st ->
                     st.executeUpdate("DELETE FROM habit_logs")
                     st.executeUpdate("DELETE FROM habits")
+                    st.executeUpdate("DELETE FROM exams")
                     st.executeUpdate("DELETE FROM sessions")
                     st.executeUpdate("DELETE FROM notes")
                     st.executeUpdate("DELETE FROM tasks")
@@ -59,6 +62,7 @@ class LocalStore(
                 insertNotes(c, notes)
                 insertSessions(c, sessions)
                 insertHabits(c, habits)
+                insertExams(c, exams)
                 c.commit()
             }.getOrElse { e ->
                 c.rollback()
@@ -71,7 +75,7 @@ class LocalStore(
         if (dbFile.exists()) return loadSqlite(dbFile)
         if (legacyPropertiesFile.exists()) {
             val snapshot = loadLegacyProperties(legacyPropertiesFile) ?: return null
-            save(snapshot.subjects, snapshot.tasks, snapshot.notes, snapshot.sessions, snapshot.habits)
+            save(snapshot.subjects, snapshot.tasks, snapshot.notes, snapshot.sessions, snapshot.habits, snapshot.exams)
             return snapshot
         }
         return null
@@ -93,7 +97,7 @@ class LocalStore(
     fun exportRawBackup(): Path {
         if (!dbFile.exists()) {
             val snapshot = load() ?: throw IllegalStateException("Nothing to back up yet")
-            save(snapshot.subjects, snapshot.tasks, snapshot.notes, snapshot.sessions, snapshot.habits)
+            save(snapshot.subjects, snapshot.tasks, snapshot.notes, snapshot.sessions, snapshot.habits, snapshot.exams)
         }
         Files.copy(dbFile, rawBackupFile, StandardCopyOption.REPLACE_EXISTING)
         return rawBackupFile
@@ -102,7 +106,7 @@ class LocalStore(
     fun importRawBackup(): Boolean {
         if (!rawBackupFile.exists()) return false
         val snapshot = loadSqlite(rawBackupFile) ?: return false
-        save(snapshot.subjects, snapshot.tasks, snapshot.notes, snapshot.sessions, snapshot.habits)
+        save(snapshot.subjects, snapshot.tasks, snapshot.notes, snapshot.sessions, snapshot.habits, snapshot.exams)
         return true
     }
 
@@ -123,7 +127,8 @@ class LocalStore(
                 tasks = loadTasks(c),
                 notes = loadNotes(c),
                 sessions = loadSessions(c),
-                habits = loadHabits(c)
+                habits = loadHabits(c),
+                exams = loadExams(c)
             )
         }
         result
@@ -176,6 +181,19 @@ class LocalStore(
                     subject_id INTEGER,
                     started_at INTEGER NOT NULL,
                     duration_minutes INTEGER NOT NULL
+                )
+            """.trimIndent())
+            st.executeUpdate("""
+                CREATE TABLE IF NOT EXISTS exams(
+                    id INTEGER PRIMARY KEY,
+                    subject_id INTEGER,
+                    subject_name TEXT NOT NULL,
+                    type TEXT NOT NULL,
+                    teachers TEXT NOT NULL,
+                    start_at INTEGER NOT NULL,
+                    end_at INTEGER NOT NULL,
+                    location TEXT NOT NULL,
+                    created_at INTEGER NOT NULL
                 )
             """.trimIndent())
             st.executeUpdate("""
@@ -299,6 +317,25 @@ class LocalStore(
         }
     }
 
+
+    private fun insertExams(c: Connection, exams: List<Exam>) {
+        c.prepareStatement("INSERT INTO exams(id,subject_id,subject_name,type,teachers,start_at,end_at,location,created_at) VALUES(?,?,?,?,?,?,?,?,?)").use { ps ->
+            exams.forEach { e ->
+                ps.setLong(1, e.id)
+                setNullableLong(ps, 2, e.subjectId)
+                ps.setString(3, e.subjectName)
+                ps.setString(4, e.type)
+                ps.setString(5, e.teachers)
+                ps.setLong(6, e.startAt)
+                ps.setLong(7, e.endAt)
+                ps.setString(8, e.location)
+                ps.setLong(9, e.createdAt)
+                ps.addBatch()
+            }
+            ps.executeBatch()
+        }
+    }
+
     private fun loadSubjects(c: Connection): List<Subject> = query(c, "SELECT * FROM subjects ORDER BY id") { rs ->
         Subject(rs.getLong("id"), rs.getString("name"), rs.getString("description"), rs.getString("color_hex"), rs.getString("icon"), rs.getLong("created_at"))
     }
@@ -341,6 +378,21 @@ class LocalStore(
         }
     }
 
+
+    private fun loadExams(c: Connection): List<Exam> = query(c, "SELECT * FROM exams ORDER BY start_at,id") { rs ->
+        Exam(
+            id = rs.getLong("id"),
+            subjectId = nullableLong(rs, "subject_id"),
+            subjectName = rs.getString("subject_name"),
+            type = rs.getString("type"),
+            teachers = rs.getString("teachers"),
+            startAt = rs.getLong("start_at"),
+            endAt = rs.getLong("end_at"),
+            location = rs.getString("location"),
+            createdAt = rs.getLong("created_at")
+        )
+    }
+
     private fun <T> query(c: Connection, sql: String, mapper: (ResultSet) -> T): List<T> {
         val out = mutableListOf<T>()
         c.createStatement().use { st -> st.executeQuery(sql).use { rs -> while (rs.next()) out += mapper(rs) } }
@@ -358,7 +410,7 @@ class LocalStore(
         val p = Properties()
         return runCatching {
             Files.newInputStream(path).use { p.load(it) }
-            StoreSnapshot(loadLegacySubjects(p), loadLegacyTasks(p), loadLegacyNotes(p), loadLegacySessions(p), emptyList())
+            StoreSnapshot(loadLegacySubjects(p), loadLegacyTasks(p), loadLegacyNotes(p), loadLegacySessions(p), emptyList(), emptyList())
         }.getOrNull()
     }
 
@@ -414,5 +466,6 @@ data class StoreSnapshot(
     val tasks: List<StudyTask>,
     val notes: List<Note>,
     val sessions: List<FocusSession>,
-    val habits: List<Habit> = emptyList()
+    val habits: List<Habit> = emptyList(),
+    val exams: List<Exam> = emptyList()
 )
