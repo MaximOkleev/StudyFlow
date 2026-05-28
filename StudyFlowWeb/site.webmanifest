@@ -1,0 +1,13 @@
+{
+  "name": "StudyFlow",
+  "short_name": "StudyFlow",
+  "description": "Локальный учебный планер с задачами, сессией, календарём и привычками.",
+  "start_url": "./",
+  "display": "standalone",
+  "background_color": "#070A12",
+  "theme_color": "#0B1220",
+  "icons": [
+    { "src": "assets/studyflow-logo-v2-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any maskable" },
+    { "src": "assets/studyflow-logo-v2-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
+  ]
+}

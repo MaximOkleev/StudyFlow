@@ -1,0 +1,8 @@
+[build]
+  publish = "StudyFlowWeb"
+  command = ""
+
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Content-Type-Options = "nosniff"

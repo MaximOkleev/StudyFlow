@@ -1,0 +1,6 @@
+id,subject,title,status,priority,deadline,estimated_minutes,spent_minutes,recurrence
+1,,🎂 Мой день рождения,Todo,Medium,2026-06-09,,,Yearly
+2,,🎂 День рождения Вани,Todo,Medium,2026-01-20,,,Yearly
+3,,🎂 День рождения Артёма,Todo,Medium,2026-01-04,,,Yearly
+4,,Праздник: День России,Todo,Medium,2026-06-12,,,Yearly
+5,,Праздник: День народного единства,Todo,Medium,2026-11-04,,,Yearly
