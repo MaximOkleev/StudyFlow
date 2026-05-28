@@ -79,19 +79,6 @@ A safety copy of the main data file is kept as:
 
 Exports and backups are written to the same folder using timestamped filenames.
 
-## Release hygiene
-
-Do not commit or ship generated files:
-
-```text
-.gradle/
-.idea/
-build/
-*/build/
-out/
-*.iml
-```
-
 ## Suggested next upgrades
 
 - Replace Properties storage with SQLite/SQLDelight.
