@@ -29,13 +29,47 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Show repository files
+        run: |
+          echo "Repository root:"
+          ls -la
+          echo ""
+          echo "Folders:"
+          find . -maxdepth 3 -type d | sort
+
+      - name: Find StudyFlowWeb folder
+        id: find_web
+        run: |
+          if [ -f "./StudyFlowWeb/index.html" ]; then
+            echo "web_dir=./StudyFlowWeb" >> "$GITHUB_OUTPUT"
+          elif [ -f "./StudyFlow/StudyFlowWeb/index.html" ]; then
+            echo "web_dir=./StudyFlow/StudyFlowWeb" >> "$GITHUB_OUTPUT"
+          elif [ -f "./StudyFlow-master/StudyFlowWeb/index.html" ]; then
+            echo "web_dir=./StudyFlow-master/StudyFlowWeb" >> "$GITHUB_OUTPUT"
+          elif [ -f "./index.html" ]; then
+            echo "web_dir=." >> "$GITHUB_OUTPUT"
+          else
+            echo "StudyFlowWeb folder was not found."
+            echo "Expected one of:"
+            echo "./StudyFlowWeb/index.html"
+            echo "./StudyFlow/StudyFlowWeb/index.html"
+            echo "./StudyFlow-master/StudyFlowWeb/index.html"
+            echo "./index.html"
+            exit 1
+          fi
+
+      - name: Show selected web folder
+        run: |
+          echo "Selected folder: ${{ steps.find_web.outputs.web_dir }}"
+          ls -la "${{ steps.find_web.outputs.web_dir }}"
+
       - name: Setup Pages
         uses: actions/configure-pages@v5
 
       - name: Upload StudyFlowWeb
         uses: actions/upload-pages-artifact@v3
         with:
-          path: ./StudyFlowWeb
+          path: ${{ steps.find_web.outputs.web_dir }}
 
       - name: Deploy to GitHub Pages
         id: deployment
