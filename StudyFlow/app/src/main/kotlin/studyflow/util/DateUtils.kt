@@ -13,6 +13,7 @@ object DateUtils {
     private val shortFormatter: DateTimeFormatter = DateTimeFormatter.ofPattern("dd MMM", Locale.ENGLISH)
     private val fullFormatter: DateTimeFormatter = DateTimeFormatter.ofPattern("dd MMM yyyy", Locale.ENGLISH)
     private val examFormatter: DateTimeFormatter = DateTimeFormatter.ofPattern("dd.MM.yyyy HH:mm", Locale.ENGLISH)
+    private val clockFormatter: DateTimeFormatter = DateTimeFormatter.ofPattern("HH:mm", Locale.ENGLISH)
 
     fun nowMillis(): Long = System.currentTimeMillis()
 
@@ -43,6 +44,8 @@ object DateUtils {
     fun formatIso(millis: Long?): String = millis?.let { millisToDate(it).toString() } ?: ""
 
     fun formatExamDateTime(millis: Long): String = millisToDateTime(millis).format(examFormatter)
+
+    fun formatClock(millis: Long): String = millisToDateTime(millis).format(clockFormatter)
 
     fun formatTimeRange(startAt: Long, endAt: Long): String {
         val start = millisToDateTime(startAt)

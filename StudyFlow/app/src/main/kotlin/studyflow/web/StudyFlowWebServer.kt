@@ -181,7 +181,7 @@ private fun StoreSnapshot.toWebJson(): String {
         }
         append(',')
         append("\"exams\":"); appendArray(exams.sortedBy { it.startAt }) { e ->
-            "{\"id\":${e.id},\"subject\":${jsonString(e.subjectName)},\"start\":${jsonString(millisToIsoDateTime(e.startAt))},\"end\":${jsonString(millisToIsoDateTime(e.endAt))},\"teachers\":${jsonString(e.teachers)}}"
+            "{\"id\":${e.id},\"subject\":${jsonString(e.subjectName)},\"start\":${jsonString(millisToIsoDateTime(e.startAt))},\"end\":${jsonString(millisToIsoDateTime(e.endAt))},\"teachers\":${jsonString(e.teachers)},\"location\":${jsonString(e.location)}}"
         }
         append(',')
         append("\"tasks\":"); appendArray(tasks) { t ->
@@ -307,7 +307,7 @@ private fun webSnapshotToStore(root: Map<*, *>): StoreSnapshot {
             teachers = str(m["teachers"]),
             startAt = parseDateTimeMillis(str(m["start"]).ifBlank { null }),
             endAt = parseDateTimeMillis(str(m["end"]).ifBlank { null }),
-            location = "",
+            location = str(m["location"]).ifBlank { str(m["room"]) },
             createdAt = now
         )
     }

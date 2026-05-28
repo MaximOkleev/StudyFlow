@@ -30,7 +30,7 @@ fun ExamSessionScreen(repository: StudyRepository) {
     val next = repository.nextExam()
     ScreenScaffold(
         title = "Session",
-        subtitle = "Сессия: предмет, дата, время и преподаватель без аудиторий и типа контроля.",
+        subtitle = "Сессия: предмет, дата, время, преподаватель и аудитория.",
         action = { Button(onClick = { repository.loadExamSchedule() }) { Text("Load session schedule") } }
     ) {
         Column(modifier = Modifier.fillMaxSize(), verticalArrangement = Arrangement.spacedBy(18.dp)) {

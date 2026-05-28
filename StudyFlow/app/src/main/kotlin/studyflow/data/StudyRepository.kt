@@ -62,9 +62,28 @@ class StudyRepository(
             focusSessions = snapshot.sessions
             habits = snapshot.habits
             exams = snapshot.exams
+            ensureExamLocations()
         }
         recalcIds()
     }
+
+    private fun ensureExamLocations() {
+        if (exams.isEmpty() || exams.none { it.location.isBlank() }) return
+        val seedSubjects = if (subjects.isNotEmpty()) subjects else SeedData.subjects()
+        val seedByKey = SeedData.exams(seedSubjects).associateBy { examKey(it) }
+        val updated = exams.map { exam ->
+            if (exam.location.isNotBlank()) exam else {
+                val seed = seedByKey[examKey(exam)]
+                if (seed != null) exam.copy(location = seed.location, teachers = exam.teachers.ifBlank { seed.teachers }) else exam
+            }
+        }
+        if (updated != exams) {
+            exams = updated
+            save("Session rooms updated")
+        }
+    }
+
+    private fun examKey(exam: Exam): String = "${exam.subjectName.lowercase()}|${exam.startAt}|${exam.endAt}"
 
     fun subjectById(id: Long): Subject? = subjects.firstOrNull { it.id == id }
     fun taskById(id: Long): StudyTask? = tasks.firstOrNull { it.id == id }
@@ -287,7 +306,7 @@ class StudyRepository(
         var nextId = 1L
         val loaded = SeedData.exams(subjects).map { seed ->
             val linkedSubject = subjects.firstOrNull { it.name.equals(seed.subjectName, ignoreCase = true) }
-            seed.copy(id = nextId++, subjectId = linkedSubject?.id ?: seed.subjectId, type = "", location = "")
+            seed.copy(id = nextId++, subjectId = linkedSubject?.id ?: seed.subjectId, type = "")
         }
         exams = loaded
         save("Loaded ${loaded.size} session events")
@@ -342,9 +361,9 @@ class StudyRepository(
     fun exportExamsCsv(): Path {
         val path = stampedPath("session_schedule_export", "csv")
         val text = buildString {
-            appendLine("id,subject,start,end,teachers")
+            appendLine("id,subject,start,end,teachers,location")
             exams.sortedBy { it.startAt }.forEach { e ->
-                appendLine(listOf(e.id, e.subjectName, DateUtils.formatExamDateTime(e.startAt), DateUtils.formatExamDateTime(e.endAt), e.teachers).joinToString(",") { csv(it.toString()) })
+                appendLine(listOf(e.id, e.subjectName, DateUtils.formatExamDateTime(e.startAt), DateUtils.formatExamDateTime(e.endAt), e.teachers, e.location).joinToString(",") { csv(it.toString()) })
             }
         }
         Files.writeString(path, text)
@@ -408,7 +427,7 @@ class StudyRepository(
             appendLine("\nFocus sessions: ${focusSessions.size}")
             focusSessions.forEach { appendLine("FOCUS | ${it.id} | ${it.durationMinutes} minutes | ${subjectName(it.subjectId)}") }
             appendLine("\nSession events: ${exams.size}")
-            exams.forEach { appendLine("SESSION | ${it.id} | ${it.subjectName} | ${DateUtils.formatTimeRange(it.startAt, it.endAt)} | ${it.teachers}") }
+            exams.forEach { appendLine("SESSION | ${it.id} | ${it.subjectName} | ${DateUtils.formatTimeRange(it.startAt, it.endAt)} | ${it.teachers} | ${it.location}") }
         }
         Files.writeString(path, text)
         lastMessage = "Backup exported: $path"

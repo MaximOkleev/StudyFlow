@@ -197,7 +197,7 @@ function renderShell(content, title, subtitle, actions = "") {
         <nav class="nav">
           ${ROUTES.map(([id, icon, label]) => `<button class="${route === id ? "active" : ""}" onclick="setRoute('${id}')"><b>${icon}</b><span>${label}</span></button>`).join("")}
         </nav>
-        <div class="sidebar-note">${apiMode ? "SQLite sync: web и desktop используют одну базу." : "Direct mode: данные только в localStorage браузера."}</div>
+        <div class="sidebar-note">${apiMode ? "SQLite sync: web и desktop используют одну базу." : "Public/direct mode: работает по ссылке, данные хранятся в localStorage браузера."}</div>
       </aside>
       <main class="main">
         <div class="topbar">
@@ -269,11 +269,31 @@ function statCard(num, label) {
 
 function empty(text) { return `<div class="empty">${escapeHtml(text)}</div>`; }
 
+function examDetailsText(e) {
+  return [
+    e.subject,
+    `Дата: ${formatDate(e.start)}`,
+    `Время: ${formatTime(e.start)}–${formatTime(e.end)}`,
+    `Аудитория: ${e.location || "не указана"}`,
+    e.teachers ? `Преподаватель: ${e.teachers}` : ""
+  ].filter(Boolean).join("\n");
+}
+
+function examTooltipHtml(e) {
+  return `<div class="event-tooltip">
+    <b>${escapeHtml(e.subject)}</b>
+    <span>Дата: ${formatDate(e.start)}</span>
+    <span>Время: ${formatTime(e.start)}–${formatTime(e.end)}</span>
+    <span class="room">Аудитория: ${escapeHtml(e.location || "не указана")}</span>
+    ${e.teachers ? `<span>Преподаватель: ${escapeHtml(e.teachers)}</span>` : ""}
+  </div>`;
+}
+
 function examRow(e) {
-  return `<div class="row">
+  return `<div class="row session-row" title="${escapeHtml(examDetailsText(e))}">
     <div>
       <div class="row-title">${escapeHtml(e.subject)}</div>
-      <div class="row-meta">${formatDate(e.start)}, ${formatTime(e.start)}–${formatTime(e.end)}${e.teachers ? " • " + escapeHtml(e.teachers) : ""}</div>
+      <div class="row-meta">${formatDate(e.start)}, ${formatTime(e.start)}–${formatTime(e.end)}${e.teachers ? " • " + escapeHtml(e.teachers) : ""}${e.location ? " • ауд. " + escapeHtml(e.location) : ""}</div>
     </div>
   </div>`;
 }
@@ -469,7 +489,7 @@ function renderDay(d, currentMonth) {
   const tasks = state.tasks.filter(t => t.deadline === key);
   return `<div class="day ${d.getMonth() !== currentMonth ? "out" : ""} ${key === todayISO() ? "today" : ""}">
     <div class="day-num">${d.getDate()}</div>
-    ${exams.map(e => `<div class="event-mini" title="${escapeHtml(e.subject)}">${formatTime(e.start)} ${escapeHtml(e.subject)}</div>`).join("")}
+    ${exams.map(e => `<div class="event-mini has-tooltip" title="${escapeHtml(examDetailsText(e))}">${formatTime(e.start)} ${escapeHtml(e.subject)}${examTooltipHtml(e)}</div>`).join("")}
     ${tasks.map(t => `<div class="event-mini task" title="${escapeHtml(t.title)}">✓ ${escapeHtml(t.title)}</div>`).join("")}
   </div>`;
 }
@@ -482,7 +502,7 @@ function renderSession() {
     <div class="list">
       ${Object.entries(grouped).map(([date, items]) => `<section class="card flat"><h3>${formatDate(date)}</h3><div class="list">${items.map(examRow).join("")}</div></section>`).join("") || empty("Расписание не загружено")}
     </div>
-  `, "Session", "Полное расписание сессии без аудиторий и служебных меток", `<button class="btn" onclick="loadSeedExams()">Load session schedule</button>`);
+  `, "Session", "Полное расписание сессии: дата, время, предмет, преподаватель и аудитория", `<button class="btn" onclick="loadSeedExams()">Load session schedule</button>`);
 }
 
 function groupBy(arr, fn) { return arr.reduce((acc, x) => ((acc[fn(x)] ||= []).push(x), acc), {}); }

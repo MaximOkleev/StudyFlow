@@ -1,91 +1,59 @@
 # StudyFlow Web
 
-Это локальная браузерная версия StudyFlow без сборки и без внешних зависимостей.
+Это браузерная версия StudyFlow.
 
-## Как запустить
+## Режим 1. Public/direct web
 
-### Вариант 1. Просто открыть файл
+Можно открыть `index.html` напрямую или выложить папку `StudyFlowWeb` на GitHub Pages/Vercel/Netlify.
 
-Открой файл:
+В этом режиме сайт работает на чистом ноутбуке по ссылке без установки зависимостей. Данные хранятся в `localStorage` браузера.
 
-```text
-StudyFlowWeb\index.html
-```
+## Режим 2. Local SQLite sync
 
-Можно открыть двойным кликом или через IntelliJ IDEA: правой кнопкой по `index.html` → **Open in Browser**.
-
-### Вариант 2. Запустить как локальный сайт по ссылке
-
-На Windows запусти:
-
-```text
-StudyFlowWeb\run-local.bat
-```
-
-Откроется ссылка:
-
-```text
-http://127.0.0.1:5173/
-```
-
-Этот способ удобнее, если хочешь показывать проект именно как сайт.
-
-## Где хранятся данные
-
-Web-версия хранит данные в `localStorage` браузера. Это отдельное хранилище от desktop-версии, которая использует SQLite.
-
-Для переноса данных используй:
-
-```text
-Settings → Export JSON
-Settings → Import JSON
-```
-
-## Что работает
-
-- Dashboard
-- Subjects
-- Tasks
-- Kanban Board
-- Calendar
-- Session
-- Notes
-- Focus Timer
-- Statistics
-- Habits
-- Settings
-- CSV/Markdown/JSON import/export
-- Browser notifications для таймера
-
-## Важно
-
-Это не заменяет desktop-приложение на Kotlin. Это отдельная локальная web-версия, сделанная для запуска по ссылке и демонстрации в браузере.
-
-
-## Общие данные с desktop-версией
-
-Чтобы web-версия и desktop-версия использовали одинаковые данные, открывай сайт не двойным кликом по `index.html`, а через локальный сервер:
-
-```bat
-run-local.bat
-```
-
-или из корня проекта:
+Если нужно, чтобы web и desktop использовали одну SQLite-базу, запускай web через локальный Kotlin-сервер:
 
 ```powershell
 gradlew.bat :app:runWeb
 ```
 
-После запуска откроется ссылка:
+или:
+
+```text
+run-web.bat
+```
+
+Откроется:
 
 ```text
 http://127.0.0.1:5173/
 ```
 
-В этом режиме сайт читает и записывает ту же SQLite-базу, что и desktop-приложение:
+В этом режиме web работает с той же базой:
 
 ```text
 %USERPROFILE%\.studyflow\studyflow.sqlite
 ```
 
-То есть задачи, предметы, заметки, привычки и события сессии будут общими. Если открыть `index.html` напрямую, сайт работает в запасном direct mode и хранит данные только в `localStorage` браузера.
+## Календарь
+
+В календаре наведи курсор на событие сессии. Появится подсказка с предметом, датой, временем, преподавателем и аудиторией.
+
+## Публикация по ссылке
+
+### GitHub Pages
+
+1. Загрузи проект в GitHub-репозиторий.
+2. Включи GitHub Pages через GitHub Actions.
+3. Workflow `.github/workflows/pages.yml` опубликует папку `StudyFlowWeb`.
+
+### Vercel
+
+Импортируй репозиторий и укажи:
+
+```text
+Root Directory: StudyFlowWeb
+Build Command: оставить пустым
+Output Directory: .
+```
+
+После деплоя получишь публичную ссылку.

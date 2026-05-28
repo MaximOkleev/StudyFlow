@@ -325,3 +325,28 @@ textarea { resize: vertical; min-height: 110px; }
   .day-head { display:none; }
   .timer-display { font-size: 56px; }
 }
+
+.has-tooltip { position: relative; overflow: visible; }
+.event-tooltip {
+  display: none;
+  position: absolute;
+  left: 8px;
+  top: 28px;
+  z-index: 30;
+  width: min(360px, 82vw);
+  border: 1px solid rgba(148, 163, 184, 0.32);
+  border-radius: 16px;
+  background: #020617;
+  color: #e2e8f0;
+  box-shadow: 0 22px 70px rgba(0,0,0,.45);
+  padding: 12px;
+  white-space: normal;
+  line-height: 1.45;
+}
+.event-tooltip b { display: block; color: white; margin-bottom: 6px; }
+.event-tooltip span { display: block; color: #cbd5e1; }
+.event-tooltip .room { color: #fde68a; font-weight: 800; }
+.has-tooltip:hover .event-tooltip { display: block; }
+.calendar { overflow: visible; }
+.day { overflow: visible; }
+.session-row { position: relative; }
