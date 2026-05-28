@@ -13,7 +13,8 @@ import java.nio.file.StandardCopyOption
 import java.util.Properties
 import kotlin.io.path.exists
 
-class LocalStore(rootDir: Path = Paths.get(System.getProperty("user.home"), ".studyflow")) {
+class LocalStore(rootDir: Path = Paths.get(System.getProperty("user.home"), ".studyflow"),
+                 private val forceAtomicMoveFailure: Boolean = false) {
     val dataDir: Path = rootDir
     private val file: Path = dataDir.resolve("studyflow.properties")
     private val rawBackupFile: Path = dataDir.resolve("studyflow_raw_backup.properties")
@@ -111,6 +112,10 @@ class LocalStore(rootDir: Path = Paths.get(System.getProperty("user.home"), ".st
             runCatching { Files.copy(target, bak, StandardCopyOption.REPLACE_EXISTING) }
         }
         runCatching {
+            if (forceAtomicMoveFailure) {
+                // For testing: simulate atomic move unsupported to exercise fallback
+                throw java.nio.file.AtomicMoveNotSupportedException("", null, "forced-failure")
+            }
             Files.move(tmp, target, StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.ATOMIC_MOVE)
         }.getOrElse {
             Files.move(tmp, target, StandardCopyOption.REPLACE_EXISTING)

@@ -25,22 +25,10 @@ StudyFlow is a Kotlin Compose Desktop study planner. It combines subjects, tasks
 ./gradlew :app:run
 ```
 
-On Windows:
-
-```bat
-gradlew.bat :app:run
-```
-
 ## Test
 
 ```bash
 ./gradlew test
-```
-
-On Windows:
-
-```bat
-gradlew.bat test
 ```
 
 ## Package
