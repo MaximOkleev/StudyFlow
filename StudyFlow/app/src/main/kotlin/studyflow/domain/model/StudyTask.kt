@@ -1,5 +1,7 @@
 package studyflow.domain.model
 
+import java.time.LocalDate
+
 data class StudyTask(
     val id: Long,
     val subjectId: Long,
@@ -11,7 +13,9 @@ data class StudyTask(
     val estimatedMinutes: Int?,
     val spentMinutes: Int,
     val createdAt: Long,
-    val completedAt: Long?
+    val completedAt: Long?,
+    val recurrence: Recurrence = Recurrence.None,
+    val sourceRecurringTaskId: Long? = null
 )
 
 enum class TaskStatus(val title: String) {
@@ -30,4 +34,18 @@ enum class TaskPriority(val title: String) {
     Low("Low"),
     Medium("Medium"),
     High("High")
+}
+
+enum class Recurrence(val title: String) {
+    None("No repeat"),
+    Daily("Daily"),
+    Weekly("Weekly"),
+    Monthly("Monthly");
+
+    fun nextDate(date: LocalDate): LocalDate = when (this) {
+        None -> date
+        Daily -> date.plusDays(1)
+        Weekly -> date.plusWeeks(1)
+        Monthly -> date.plusMonths(1)
+    }
 }

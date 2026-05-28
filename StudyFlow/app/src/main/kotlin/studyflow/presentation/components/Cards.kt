@@ -109,6 +109,10 @@ fun TaskCard(task: StudyTask, subjectName: String, onCycleStatus: () -> Unit, on
                 Badge(task.status.title, statusColor(task.status))
                 Spacer(Modifier.width(8.dp))
                 Badge(task.priority.title, priorityColor)
+                if (task.recurrence.name != "None") {
+                    Spacer(Modifier.width(8.dp))
+                    Badge(task.recurrence.title, Color(0xFF8B5CF6))
+                }
             }
             if (task.description.isNotBlank()) Text(task.description, color = Color(0xFFB9C0D4), maxLines = 2, overflow = TextOverflow.Ellipsis)
             Row(verticalAlignment = Alignment.CenterVertically) {
@@ -167,4 +171,21 @@ private fun statusColor(status: TaskStatus): Color = when (status) {
     TaskStatus.Todo -> Color(0xFF9CA3AF)
     TaskStatus.InProgress -> MaterialTheme.colorScheme.primary
     TaskStatus.Done -> Color(0xFF10B981)
+}
+
+@Composable
+fun ExamCard(exam: studyflow.domain.model.Exam, modifier: Modifier = Modifier) {
+    Card(colors = CardDefaults.cardColors(containerColor = Color(0xFF101827)), shape = RoundedCornerShape(22.dp), modifier = modifier.fillMaxWidth()) {
+        Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Column(Modifier.weight(1f)) {
+                    Text(exam.subjectName, color = Color.White, fontWeight = FontWeight.Bold, fontSize = 18.sp)
+                    Text(DateUtils.formatTimeRange(exam.startAt, exam.endAt), color = Color(0xFF22D3EE), fontSize = 13.sp, fontWeight = FontWeight.Bold)
+                }
+                if (exam.type.isNotBlank()) Badge(exam.type, Color(0xFFF97316))
+            }
+            if (exam.teachers.isNotBlank()) Text("Преподаватель: ${exam.teachers}", color = Color(0xFFB9C0D4), fontSize = 14.sp)
+            if (exam.location.isNotBlank()) Text("Аудитория: ${exam.location}", color = Color(0xFF9CA3AF), fontSize = 13.sp)
+        }
+    }
 }

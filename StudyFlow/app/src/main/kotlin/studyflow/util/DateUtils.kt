@@ -2,6 +2,7 @@ package studyflow.util
 
 import java.time.Instant
 import java.time.LocalDate
+import java.time.LocalDateTime
 import java.time.YearMonth
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
@@ -11,6 +12,8 @@ object DateUtils {
     private val zone: ZoneId = ZoneId.systemDefault()
     private val shortFormatter: DateTimeFormatter = DateTimeFormatter.ofPattern("dd MMM", Locale.ENGLISH)
     private val fullFormatter: DateTimeFormatter = DateTimeFormatter.ofPattern("dd MMM yyyy", Locale.ENGLISH)
+    private val examFormatter: DateTimeFormatter = DateTimeFormatter.ofPattern("dd.MM.yyyy HH:mm", Locale.ENGLISH)
+    private val clockFormatter: DateTimeFormatter = DateTimeFormatter.ofPattern("HH:mm", Locale.ENGLISH)
 
     fun nowMillis(): Long = System.currentTimeMillis()
 
@@ -19,6 +22,10 @@ object DateUtils {
     fun todayStartMillis(): Long = today().atStartOfDay(zone).toInstant().toEpochMilli()
 
     fun dateToMillis(date: LocalDate): Long = date.atStartOfDay(zone).toInstant().toEpochMilli()
+
+    fun dateTimeToMillis(dateTime: LocalDateTime): Long = dateTime.atZone(zone).toInstant().toEpochMilli()
+
+    fun millisToDateTime(millis: Long): LocalDateTime = Instant.ofEpochMilli(millis).atZone(zone).toLocalDateTime()
 
     fun millisToDate(millis: Long): LocalDate = Instant.ofEpochMilli(millis).atZone(zone).toLocalDate()
 
@@ -32,6 +39,23 @@ object DateUtils {
     fun formatFull(millis: Long?): String {
         if (millis == null) return "No deadline"
         return millisToDate(millis).format(fullFormatter)
+    }
+
+    fun formatIso(millis: Long?): String = millis?.let { millisToDate(it).toString() } ?: ""
+
+    fun formatExamDateTime(millis: Long): String = millisToDateTime(millis).format(examFormatter)
+
+    fun formatClock(millis: Long): String = millisToDateTime(millis).format(clockFormatter)
+
+    fun formatTimeRange(startAt: Long, endAt: Long): String {
+        val start = millisToDateTime(startAt)
+        val end = millisToDateTime(endAt)
+        return "${start.toLocalDate()} ${start.toLocalTime()} — ${end.toLocalTime()}"
+    }
+
+    fun parseIsoDateToMillis(text: String): Long? {
+        if (text.isBlank()) return null
+        return runCatching { dateToMillis(LocalDate.parse(text.trim())) }.getOrNull()
     }
 
     fun isOverdue(millis: Long?): Boolean = millis != null && millis < todayStartMillis()

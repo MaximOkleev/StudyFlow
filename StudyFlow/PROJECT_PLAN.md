@@ -1,31 +1,26 @@
-# StudyFlow development plan
+# StudyFlow Project Plan
 
-## Done in this starter
+## Current focus
 
-- Working Compose Desktop application shell
-- Sidebar navigation
-- Dashboard
-- Subjects screen
-- Tasks screen
-- Notes screen
-- Calendar screen
-- Timer screen
-- Statistics screen
-- Settings and export screen
-- Local persistence
-- Add/edit/delete for subjects, tasks and notes
-- Focus sessions
-- Demo data
+This version is based on the uploaded StudyFlow project and extends it directly, instead of replacing it with a separate unrelated build.
 
-## Next practical steps
+## Implemented upgrades
 
-1. Open the project and run it.
-2. Click through all screens and check what you want to redesign.
-3. Replace the simple task deadline input with a real date picker.
-4. Add SQLite/SQLDelight when the UI is stable.
-5. Create screenshots for GitHub.
-6. Record a short demo video.
+- Replaced Properties storage with SQLite via JDBC.
+- Added migration from legacy `studyflow.properties` into SQLite.
+- Added native desktop notification when the timer completes.
+- Added Kanban board with horizontal drag gestures between task statuses.
+- Added recurring tasks with automatic next-instance generation.
+- Added daily habit tracking with streak calculation.
+- Added tasks CSV import and notes Markdown import.
+- Added habits CSV export and SQLite raw backup/restore.
+- Preserved existing screens, tests and project structure where possible.
 
-## Good final defense explanation
+## Next improvements
 
-StudyFlow is not only a to-do list. It connects subjects, tasks, deadlines, notes and focus sessions into one local desktop study system. The user can plan work, track time, see weekly progress and export data. The project demonstrates desktop UI, state management, local persistence and simple analytics.
+- Replace manual path text fields with native file picker dialogs.
+- Add SQLDelight code generation after the schema stabilizes.
+- Add proper UI tests for Kanban drag gestures and habit tracking.
+- Add reminder notifications for upcoming deadlines.
+- Add tag filters for notes and tasks.
+- Add cloud sync only after local-first behavior is fully stable.

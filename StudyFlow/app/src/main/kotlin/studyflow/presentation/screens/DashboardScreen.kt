@@ -41,7 +41,7 @@ fun DashboardScreen(repository: StudyRepository, onOpenTasks: () -> Unit, onOpen
                 Column(Modifier.weight(1.2f), verticalArrangement = Arrangement.spacedBy(12.dp)) {
                     Text("Upcoming work", color = Color.White)
                     val upcoming = repository.upcomingTasks()
-                    if (upcoming.isEmpty()) EmptyState("No upcoming tasks. Good state, but do not relax too early.") else LazyColumn(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                    if (upcoming.isEmpty()) EmptyState(if (repository.subjects.isEmpty()) "Clean workspace. Add your first subject and task to start." else "No upcoming tasks. Good state, but do not relax too early.") else LazyColumn(verticalArrangement = Arrangement.spacedBy(10.dp)) {
                         items(upcoming) { task ->
                             TaskCard(task, repository.subjectName(task.subjectId), onCycleStatus = { repository.cycleTaskStatus(task.id) }, onEdit = onOpenTasks, onDelete = { repository.deleteTask(task.id) })
                         }
@@ -59,6 +59,10 @@ fun DashboardScreen(repository: StudyRepository, onOpenTasks: () -> Unit, onOpen
                             Text("Quick diagnosis", color = Color.White)
                             val worst = repository.subjects.minByOrNull { repository.subjectProgress(it.id) }
                             Text("Weakest subject: ${worst?.name ?: "none"}", color = Color(0xFFB9C0D4))
+                            repository.nextExam()?.let { exam ->
+                                Text("Next session event: ${exam.subjectName}", color = Color(0xFFFBBF24))
+                                Text("${studyflow.util.DateUtils.formatTimeRange(exam.startAt, exam.endAt)} • ${exam.teachers}", color = Color(0xFF9CA3AF))
+                            }
                             Text("Rule: close overdue tasks first, then high-priority tasks, then everything else.", color = Color(0xFF9CA3AF))
                         }
                     }

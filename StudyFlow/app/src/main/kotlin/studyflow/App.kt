@@ -12,8 +12,11 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import studyflow.data.StudyRepository
 import studyflow.presentation.components.Sidebar
+import studyflow.presentation.screens.BoardScreen
 import studyflow.presentation.screens.CalendarScreen
 import studyflow.presentation.screens.DashboardScreen
+import studyflow.presentation.screens.ExamSessionScreen
+import studyflow.presentation.screens.HabitsScreen
 import studyflow.presentation.screens.NotesScreen
 import studyflow.presentation.screens.SettingsScreen
 import studyflow.presentation.screens.StatisticsScreen
@@ -27,6 +30,9 @@ enum class AppScreen(val title: String, val shortTitle: String) {
     Subjects("Subjects", "Subjects"),
     Tasks("Tasks", "Tasks"),
     Calendar("Calendar", "Calendar"),
+    Session("Session Schedule", "Session"),
+    Board("Kanban Board", "Board"),
+    Habits("Habits", "Habits"),
     Notes("Notes", "Notes"),
     Timer("Focus Timer", "Timer"),
     Statistics("Statistics", "Stats"),
@@ -34,7 +40,7 @@ enum class AppScreen(val title: String, val shortTitle: String) {
 }
 
 @Composable
-fun StudyFlowApp() {
+fun StudyFlowApp(compact: Boolean = false) {
     val repository = remember { StudyRepository() }
     var screen by remember { mutableStateOf(AppScreen.Dashboard) }
 
@@ -44,12 +50,15 @@ fun StudyFlowApp() {
             color = MaterialTheme.colorScheme.background
         ) {
             Row(modifier = Modifier.fillMaxSize()) {
-                Sidebar(current = screen, onSelect = { screen = it })
+                Sidebar(current = screen, compact = compact, onSelect = { screen = it })
                 when (screen) {
                     AppScreen.Dashboard -> DashboardScreen(repository, onOpenTasks = { screen = AppScreen.Tasks }, onOpenTimer = { screen = AppScreen.Timer })
                     AppScreen.Subjects -> SubjectsScreen(repository)
                     AppScreen.Tasks -> TasksScreen(repository)
                     AppScreen.Calendar -> CalendarScreen(repository)
+                    AppScreen.Session -> ExamSessionScreen(repository)
+                    AppScreen.Board -> BoardScreen(repository)
+                    AppScreen.Habits -> HabitsScreen(repository)
                     AppScreen.Notes -> NotesScreen(repository)
                     AppScreen.Timer -> TimerScreen(repository)
                     AppScreen.Statistics -> StatisticsScreen(repository)
