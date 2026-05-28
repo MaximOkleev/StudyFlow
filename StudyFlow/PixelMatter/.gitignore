@@ -1,0 +1,23 @@
+# CMake / build outputs
+build/
+cmake-build-*/
+out/
+_deps/
+CMakeFiles/
+CMakeCache.txt
+compile_commands.json
+*.obj
+*.lib
+*.exe
+*.pdb
+*.ilk
+
+# IDE
+.idea/
+.vs/
+.vscode/
+
+# Runtime artifacts
+saves/*.pmat
+saves/*.png
+!saves/.gitkeep
